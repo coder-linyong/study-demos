@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>铺砖</title>
+</head>
+<body>
+<canvas width="500" height="500" id="brick"></canvas>
+</body>
+<script type="text/javascript">
+  function render() {
+    const canvas = document.getElementById('brick')
+    if (!canvas?.getContext ?? true) {
+      return false
+    }
+    const ctx = canvas.getContext('2d')
+    const height = 20
+
+    function drawBrick(isHorizontal, startX, startY) {
+      if (startX > canvas.width - height || startY > canvas.height - height) {
+        return false
+      }
+      const w = isHorizontal ? height * 2 : height
+      const h = isHorizontal ? height : height * 2
+      ctx.fillStyle = `rgba(0,${startX / 2},${startY / 2})`
+      ctx.fillRect(startX, startY, w, h)
+      drawBrick(isHorizontal, startX + height, startY + height)
+    }
+
+    function drawHorizontal() {
+      for (let i = 0; i < canvas.height; i += height * 4) {
+        drawBrick(true, 0, i)
+      }
+      for (let i = 0; i < canvas.width; i += height * 4) {
+        drawBrick(true, i, 0)
+      }
+    }
+
+    function drawVertical() {
+      for (let i = height; i < canvas.height; i += height * 4) {
+        drawBrick(false, 0, i)
+      }
+      for (let i = height * 3; i < canvas.width; i += height * 4) {
+        drawBrick(false, i, 0)
+      }
+    }
+
+    drawHorizontal()
+    drawVertical()
+  }
+
+  render()
+</script>
+</html>
