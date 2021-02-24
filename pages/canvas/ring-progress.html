@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>圆形进度条</title>
+</head>
+<body>
+<canvas width="500" height="500" id="canvas"></canvas>
+</body>
+<script>
+  (function () {
+    let num = -90
+
+    function render(a) {
+      const canvas = document.getElementById('canvas')
+      if (!canvas?.getContext ?? true) {
+        return false
+      }
+      const ctx = canvas.getContext('2d')
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      function drawRing(color, x, y, startAngle, endAngle, cap = 'round') {
+        ctx.fillStyle = color
+        ctx.strokeStyle = color
+
+        ctx.beginPath()
+        ctx.lineCap = cap
+        ctx.lineWidth = 10
+        ctx.arc(x, y, 50, -0.5 * Math.PI, num * Math.PI / 180)
+        ctx.stroke()
+
+        ctx.textAlign = 'center'
+        ctx.font = 'bold 24px serif'
+        ctx.fillText(`${((num + 90) * 100 / 360).toFixed(1)}%`, x, y + ctx.measureText(`${num}`).fontBoundingBoxDescent * 2)
+
+        ctx.shadowColor = '#b6afaf'
+        ctx.shadowBlur = 10
+        ctx.shadowOffsetY = 2
+        ctx.shadowOffsetX = 2
+      }
+
+      drawRing('#d77c7c', 100, 100, -0.5 * Math.PI, num * Math.PI / 180)
+      drawRing('#60e07e', 300, 100, -0.5 * Math.PI, num * Math.PI / 180,'butt')
+
+      num += 0.5
+      if (num <= 270) {
+        requestAnimationFrame(render)
+      }
+    }
+
+    render()
+  })()
+</script>
+</html>

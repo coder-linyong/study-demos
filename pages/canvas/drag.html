@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>拖拽</title>
+  <style>
+    canvas {
+      border: 1px solid #1BCE6F;
+    }
+  </style>
+</head>
+<body>
+<div>
+  <label>
+    边数
+    <input type="number" value="6" id="sidesNum">
+  </label>
+  <label>
+    开启拖拽
+    <input type="checkbox" id="draggable">
+  </label>
+</div>
+<canvas width="500" height="500"></canvas>
+</body>
+<script>
+  /*
+  * 两个功能：
+  *   1.绘图
+  *     创建多边形类，绘制的时候通过类调用绘制方法，添加到数组中
+  *   2.拖拽
+  *     点击位置判断是否在数组中某个路径下（倒序遍历），改变该路径的位置，然后重新绘制
+  * */
+
+  class Polygon {
+    constructor(sidesNum, x, y, radius) {
+      this.sidesNum = sidesNum
+      this.x = x
+      this.y = y
+      this.radius = radius
+    }
+
+    draw(ctx, borderColor = '#000',) {
+      this.path = new Path2D()
+      const radianStep = Math.PI * 2 / this.sidesNum
+
+      for (let i = 0; i <= Math.PI * 2; i += radianStep) {
+        this.path.lineTo(this.x + this.radius * Math.cos(i), this.y + this.radius * Math.sin(i))
+      }
+      this.path.closePath()
+      ctx.strokeStyle = borderColor
+      ctx.stroke(this.path)
+    }
+  }
+
+  (function () {
+    const canvas = document.querySelector('canvas')
+    if (!canvas.getContext ?? true) return
+    const ctx = canvas.getContext('2d')
+    const sidesNumInput = document.getElementById('sidesNum')
+    const draggableDom = document.getElementById('draggable')
+    const polygons = []
+    let imgData
+    let startX
+    let startY
+    let editingPolygon = null
+    let dragPolygon = null
+
+    /**
+     * 获取鼠标在canvas的位置
+     * @param canvas 画布DOM
+     * @param clientX 鼠标客户端x轴位置
+     * @param clientY 鼠标客户端y轴
+     * @returns {{x: number, y: number}}
+     */
+    function getMousePos(canvas, clientX, clientY) {
+      const rect = canvas.getBoundingClientRect()
+      return {
+        x: clientX - rect.x,
+        y: clientY - rect.y,
+      }
+    }
+
+    /*
+      当未开启拖拽时，进行绘图
+        绘图时：
+          1.鼠标按下的那一刻记录当前画布帧；
+          2.鼠标移动时，不断计算新图形的半径，清空画布，将记录的帧添加到画布上，再将图形绘制到画布上；
+          3.鼠标按钮弹时将多边形对象添加到用于保存多边形的堆中
+        拖拽时：
+          1.鼠标按下时倒序取鼠标所在的多边形路径（最后添加的图形在上面），保存它（相当于选中效果）
+          2.鼠标移动时改变选中多边形的中心点，清空画布，将所有多边形重新绘制
+          3.鼠标弹起释放选中的多边形
+     */
+    canvas.addEventListener('mousedown', ev => {
+      const pos = getMousePos(canvas, ev.clientX, ev.clientY)
+      if (draggableDom.checked && polygons.length) {
+        for (let i = polygons.length - 1; i >= 0; i--) {
+          const p = polygons[i]
+          if (p && ctx.isPointInPath(p.path, pos.x, pos.y)) {
+            dragPolygon = p
+            break
+          }
+        }
+      } else {
+        imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        startX = pos.x
+        startY = pos.y
+      }
+    })
+    canvas.addEventListener('mousemove', ev => {
+      const pos = getMousePos(canvas, ev.clientX, ev.clientY)
+      if (dragPolygon) {
+        dragPolygon.x += ev.movementX
+        dragPolygon.y += ev.movementY
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        polygons.map(p => {
+          p.draw(ctx)
+        })
+      } else if (imgData) {
+        const sidesNum = sidesNumInput.value
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.putImageData(imgData, 0, 0)
+        editingPolygon = new Polygon(sidesNum, startX, startY, Math.hypot(startX - pos.x, startY - pos.y))
+        editingPolygon.draw(ctx)
+      }
+    })
+    canvas.addEventListener('mouseup', ev => {
+      if (dragPolygon) {
+        dragPolygon = null
+      } else if (imgData) {
+        editingPolygon && polygons.push(editingPolygon)
+        imgData = null
+        editingPolygon = null
+      }
+    })
+  })()
+</script>
+</html>

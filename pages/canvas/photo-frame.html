@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<!--<img src="../../../svg/img/1.jpg" alt="">-->
+<canvas width="700" height="700">暂不支持canvas</canvas>
+</body>
+<script>
+  function render() {
+    const canvas = document.querySelector('canvas')
+    if (!canvas?.getContext ?? true) {
+      return false
+    }
+    const ctx = canvas.getContext('2d')
+    const img = new Image()
+    img.src = 'http://p1.qhimgs4.com/t016ba76004b9fd8664.jpg'
+    let x = 0
+    let y = 0
+    const radius = 15
+    const step = 20
+    ctx.fillStyle = '#84e292'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    function drawBorder(direction) {
+      const isHorizontal = direction === 'top' || direction === 'bottom'
+      let startAngle = direction === 'top' ? 0 :
+        direction === 'right' ? 0.5 * Math.PI :
+          direction === 'bottom' ? Math.PI : -0.5 * Math.PI
+      let endAngle = direction === 'top' ? Math.PI :
+        direction === 'right' ? 1.5 * Math.PI :
+          direction === 'bottom' ? 2 * Math.PI : 0.5 * Math.PI
+      if (direction === 'left') {
+        x = 0
+        y = 0
+      }
+      if (direction === 'bottom') {
+        x = 0
+        y = canvas.height
+      }
+      while (isHorizontal ? x < canvas.width : y < canvas.height) {
+        ctx.moveTo(x, y)
+        ctx.lineTo(isHorizontal ? x += step : x, isHorizontal ? y : y += step)
+        ctx.arc(isHorizontal ? x += radius : x, isHorizontal ? y : y += radius, radius, startAngle, endAngle)
+        ctx.moveTo(isHorizontal ? x += radius : x, isHorizontal ? y : y += radius)
+        ctx.lineTo(isHorizontal ? x += step : x, isHorizontal ? y : y += step)
+      }
+    }
+
+    drawBorder('top')
+    drawBorder('right')
+    drawBorder('bottom')
+    drawBorder('left')
+
+    ctx.fillStyle='#fff'
+    ctx.fill()
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 640, 640, 30, 30, 640, 640)
+    }
+  }
+
+  render()
+</script>
+</html>
