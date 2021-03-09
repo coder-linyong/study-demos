@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+
+    canvas {
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+<canvas></canvas>
+</body>
+<script>
+  /*
+    洗牌算法：按顺序将数组中的每个元素与数组中任一元素交换位置，模拟手动洗牌的过程
+    https://www.zhihu.com/question/68330851/answer/266506621
+  */
+  Array.prototype.shuffle = function () {
+    const arr = this
+    for (let i = 0; i < arr.length; i++) {
+      const n = randomInt(0, arr.length - 1)
+      const tem = arr[n]
+      arr[n] = arr[i]
+      arr[i] = tem
+    }
+    return arr
+  }
+
+  function randomFloat(min, max) {
+    return Math.random() * (max - min) + min
+  }
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min)
+  }
+
+  function generateColor() {
+    const n1 = randomInt(150, 250)
+    const n2 = randomInt(100, 250)
+    const n3 = randomInt(0, 50)
+    const colorArr = [n1, n2, n3]
+    colorArr.shuffle()
+    return `rgba(${colorArr[0]},${colorArr[1]},${colorArr[2]},0.4)`
+  }
+
+  /*
+    分支：
+      颜色随机，并伴有透明度，图形相交部分去亮色值
+      半径逐渐减小
+      从底部中央开始
+      末端果实圆带有阴影
+      每个分支长度不固定，但不会太短
+      分支每次偏移方向有一定范围
+      每个分支开叉角度有范围，且逐步增大
+  */
+
+  class Tree {
+    #branchs = []
+
+    constructor(x, y, radius, level, branchNum = randomInt(2, 3)) {
+      this.x = x
+      this.y = y
+      this.branchNum = branchNum
+
+      for (let i = 0; i < branchNum; i++) {
+        this.#branchs.push(new Branch(x, y, radius, level, generateColor()))
+      }
+    }
+
+    grow(ctx) {
+      for (const branch of this.#branchs) {
+        if (branch.allFinish()) {
+          continue
+        }
+        branch.grow(ctx)
+      }
+    }
+
+    allFinish() {
+      let finish = false
+      for (const branch of this.#branchs) {
+        finish = branch.allFinish()
+      }
+      return finish
+    }
+  }
+
+  class Branch {
+
+    #angleOffset = 0
+    #step = 2
+    #branchs = []
+    #color = ''
+    #x = 0
+    #y = 0
+    #angle = 90
+    #lifespan = randomInt(80, 130)
+    #age = 0
+    #level = 0
+    #branchNum = 0
+
+    constructor(x, y, radius, level, color = generateColor(), angle = 90, branchNum = randomInt(2, 4)) {
+      this.#x = x
+      this.#y = y
+      this.radius = radius
+      this.#color = color
+      this.finished = false
+      this.#level = level
+      this.#branchNum = branchNum
+      this.#angle = angle
+      this.#angleOffset = 10 - this.#level * 1.5
+      this.id = Date.now()
+    }
+
+    grow(ctx) {
+      if (this.allFinish()) return
+      if (this.finished) {
+        if (this.#level === 0) {
+          const { leaf } = this
+          if (!leaf.finished) leaf.grow(ctx)
+        } else {
+          for (const branch of this.#branchs) {
+            !branch.allFinish() && branch.grow(ctx)
+          }
+        }
+      } else {
+        const pos = Branch.getCoordinate(this.#x, this.#y, this.#angle, this.#step)
+        ctx.fillStyle = this.#color
+        ctx.beginPath()
+        ctx.arc(pos.x, pos.y, this.radius, 0, 2 * Math.PI)
+        ctx.closePath()
+        ctx.fill()
+        if (++this.#age < this.#lifespan) {
+          this.radius -= this.radius > 1.5 ? 0.05 : 0
+          this.#angle += randomFloat(-this.#angleOffset, this.#angleOffset)
+          this.#step -= 0.0025
+          this.#x = pos.x
+          this.#y = pos.y
+        } else {
+          if (this.#level > 0) {
+            for (let i = 0; i < this.#branchNum; i++) {
+              this.#branchs.push(new Branch(this.#x, this.#y, this.radius, this.#level - 1, this.#color, this.#angle))
+            }
+          } else {
+            this.leaf = new Leaf(this.#x, this.#y)
+          }
+          this.finished = true
+        }
+      }
+    }
+
+    setPos(x, y) {
+      this.#x = x
+      this.#y = y
+    }
+
+    static getCoordinate(x, y, angle, step) {
+      const radian = angle * (Math.PI / 180)
+      return {
+        x: x - step * Math.cos(radian),
+        y: y - step * Math.sin(radian),
+      }
+    }
+
+    allFinish() {
+      if (this.#level === 0) {
+        return this.finished && (this?.leaf?.finished ?? false)
+      }
+      return false
+    }
+  }
+
+  class Leaf {
+    #size = randomInt(4, 8)
+    #radius = 0
+    #x = 0
+    #y = 0
+    #color = generateColor()
+
+    constructor(x, y) {
+      this.#x = x
+      this.#y = y
+      this.finished = false
+    }
+
+    grow(ctx) {
+      if (this.#radius > this.#size) {
+        this.finished = true
+        return
+      }
+      ctx.beginPath()
+      ctx.arc(this.#x, this.#y, this.#radius, 0, 2 * Math.PI)
+      ctx.fillStyle = this.#color
+      ctx.fill()
+      ctx.shadowBlur = this.#size * 40
+      ctx.shadowColor = this.#color
+      this.#radius += randomFloat(0.3, 0.8)
+    }
+  }
+
+  (function () {
+    const canvas = document.querySelector('canvas')
+    canvas.width = document.body.clientWidth
+    canvas.height = document.body.clientHeight
+    if (!canvas?.getContext ?? true) return
+    const ctx = canvas.getContext('2d')
+    ctx.globalAlpha = 0.5
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.translate(canvas.width / 2, canvas.height)
+    const tree = new Tree(0, 0, 20, 4)
+
+    function render() {
+      tree.grow(ctx)
+      if (!tree.allFinish()) {
+        requestAnimationFrame(render)
+      }
+    }
+
+    render()
+  })()
+</script>
+</html>

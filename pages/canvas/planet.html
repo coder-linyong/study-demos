@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <style>
+
+    canvas {
+      background: #000;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<canvas width="700" height="700"></canvas>
+</body>
+<script>
+
+  function randomFloat(min, max) {
+    return Math.random() * (max - min) + min
+  }
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min)
+  }
+
+  /*
+    绘制杂乱无序的线
+    每次绘制线都逐步增长（不超过画布半径）,色调逐渐增加
+    线条设置透明度
+    线条交叠部分取亮的色值
+  */
+  class Radiation {
+    #points = []
+
+    constructor(x, y) {
+      this.hub = 250
+      this.life = 1
+      this.decay = 0.0000002
+      this.offset = 15
+      this.x = x
+      this.y = y
+      this.pointNum = 100
+      this.angle = 0
+      this.tick = 0
+    }
+
+    #generatePoints() {
+      const poiArr = this.#points = []
+      const {
+        x,
+        pointNum,
+        offset,
+        y
+      } = this
+      for (let i = 0; i < pointNum; i++) {
+        this.angle += randomFloat(-offset, offset)
+        poiArr.push({
+          x: x + Math.cos(this.angle) * offset,
+          y: y + Math.sin(this.angle) * offset
+        })
+      }
+      this.offset++
+      this.pointNum += randomInt(pointNum * 0.03, pointNum * 0.07)
+    }
+
+    draw(ctx) {
+      const {
+        pointNum,
+        decay,
+        hub
+      } = this
+      this.#generatePoints()
+      for (let i = 0; i < pointNum; i++) {
+        const lastPoint = this.#points[randomInt(0, pointNum - 1)]
+        const point = this.#points[i]
+        ctx.beginPath()
+        ctx.moveTo(point.x, point.y)
+        ctx.lineTo(lastPoint.x, lastPoint.y)
+        ctx.strokeStyle = `hsl(${hub + randomInt(-10, 10)}, ${randomInt(50, 70)}%,${randomInt(50, 70)}%,${this.life * 0.1})`
+        // ctx.strokeStyle = `red`
+        ctx.stroke()
+        this.life -= decay
+        this.tick++
+      }
+    }
+  }
+
+  (function () {
+    const branchs = []
+    const canvas = document.querySelector('canvas')
+    if (!canvas?.getContext ?? true) return
+    const ctx = canvas.getContext('2d')
+    const radiation = new Radiation(canvas.width / 2, canvas.height / 2)
+    ctx.globalAlpha = 0.02
+    ctx.globalCompositeOperation = 'lighter'
+
+    function render() {
+      radiation.draw(ctx)
+      if (radiation.life > 0 ) requestAnimationFrame(render)
+    }
+
+    render()
+  })()
+</script>
+</html>
