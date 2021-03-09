@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Title</title>
+  <title>树生长动画</title>
   <style>
     * {
       padding: 0;
@@ -47,6 +47,7 @@
     return Math.floor(Math.random() * (max - min + 1) + min)
   }
 
+  //生成亮色
   function generateColor() {
     const n1 = randomInt(150, 250)
     const n2 = randomInt(100, 250)
@@ -57,14 +58,18 @@
   }
 
   /*
-    分支：
-      颜色随机，并伴有透明度，图形相交部分去亮色值
-      半径逐渐减小
-      从底部中央开始
-      末端果实圆带有阴影
-      每个分支长度不固定，但不会太短
-      分支每次偏移方向有一定范围
-      每个分支开叉角度有范围，且逐步增大
+    知识点一：
+      2π是一个圆的弧度
+      2*π*rad=360°  rad是弧度
+      1°=π*rad/180
+      1rad=180°/π
+
+    思想：树由若干分支组成，分支之下还有分支，直到最后一级的分支（有点类似递归，所以最后一个分支的没有分支）
+      分支：确定好某一个方向，然后沿着该方向某一角度方向移动，子分子基于父分支角度移动，每个分支颜色一致
+      叶子：叶子由随机大小的圆和它的阴影组成，位置是末分支最后移动的位置
+      何时完成？
+        末分支：叶子生长完成
+        非末分支：子分子生长完成
   */
 
   class Tree {
@@ -90,16 +95,15 @@
     }
 
     allFinish() {
-      let finish = false
+      let finish = true
       for (const branch of this.#branchs) {
-        finish = branch.allFinish()
+        finish = finish && branch.allFinish()
       }
       return finish
     }
   }
 
   class Branch {
-
     #angleOffset = 0
     #step = 2
     #branchs = []
@@ -122,10 +126,12 @@
       this.#branchNum = branchNum
       this.#angle = angle
       this.#angleOffset = 10 - this.#level * 1.5
-      this.id = Date.now()
     }
 
     grow(ctx) {
+      if (this.#level === 0) {
+        debugger
+      }
       if (this.allFinish()) return
       if (this.finished) {
         if (this.#level === 0) {
@@ -177,7 +183,13 @@
 
     allFinish() {
       if (this.#level === 0) {
-        return this.finished && (this?.leaf?.finished ?? false)
+        return this?.leaf?.finished ?? false
+      } else if (this.finished) {
+        let finish = true
+        for (const branch of this.#branchs) {
+          finish = finish && branch.allFinish()
+        }
+        return finish
       }
       return false
     }
