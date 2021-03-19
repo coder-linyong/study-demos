@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>雪花动画</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    canvas {
+      position: absolute;
+      left: 0;
+      right: 0;
+      transform: translateZ(0);
+    }
+  </style>
+</head>
+<body>
+<canvas></canvas>
+</body>
+<script>
+
+  (function () {
+    //  绘制 https://www.bilibili.com/video/av38339350/
+    //  动画 https://www.bilibili.com/video/av78247451/
+    const canvas = document.querySelector('canvas')
+    if (!canvas.getContext ?? true) return
+    const ctx = canvas.getContext('2d')
+    const worker = new Worker('js/snow-worker2.js')
+    let x = 0
+    let y = 0
+    canvas.width = document.body.clientWidth
+    canvas.height = document.body.clientHeight
+    ctx.fillStyle = '#fff'
+    ctx.strokeStyle = '#fff'
+
+    worker.postMessage({
+      type: 'init',
+      data: {
+        width: document.body.clientWidth,
+        height: document.body.clientHeight
+      }
+    })
+    worker.onerror = e => {
+      console.log(e)
+    }
+    worker.onmessage = e => {
+      const data = e.data
+      if (data.type === 'frame') {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.drawImage(data.data.imageBitmap, 0, 0)
+      }
+    }
+
+    // function render() {
+    //   ctx.drawImage(outCanvas, 0, 0)
+    //   generateNextFrame()
+    //
+    //   requestAnimationFrame(render)
+    // }
+
+    // render()
+  })()
+</script>
+</html>
