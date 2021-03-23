@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+<canvas></canvas>
+</body>
+<script>
+  Array.prototype.shuffle = function () {
+    const arr = this
+    for (let i = 0; i < arr.length; i++) {
+      const n = randomInt(0, arr.length - 1)
+      const tem = arr[n]
+      arr[n] = arr[i]
+      arr[i] = tem
+    }
+    return arr
+  }
+
+  Date.prototype.format = function (format = 'yyyy-MM-dd hh:mm:ss') {
+    const time = this
+
+    // 用于循环匹配正则
+    const regObj = {
+      'M+': time.getMonth() + 1,
+      'd+': time.getDate(),
+      'h+': time.getHours(),
+      'm+': time.getMinutes(),
+      's+': time.getSeconds()
+    }
+
+    // 利用正则表达式匹配年格式的字符串，并将格式化字符串替换
+    if (/(y+)/.test(format)) {
+      format = format.replace(RegExp.$1, `${time.getFullYear()}`.substr(4 - RegExp.$1.length))
+    }
+    for (let reg in regObj) {
+      if (new RegExp(`(${reg})`).test(format)) {
+        const dataStr = regObj[reg] >= 10 ? regObj[reg] : RegExp.$1.length === 1 ? regObj[reg] : `0${regObj[reg]}`
+        format = format.replace(RegExp.$1, dataStr)
+      }
+    }
+    return format
+  }
+
+  function randomFloat(min, max) {
+    return Math.random() * (max - min) + min
+  }
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min)
+  }
+
+  //生成亮色
+  function generateColor() {
+    const n1 = randomInt(150, 250)
+    const n2 = randomInt(100, 250)
+    const n3 = randomInt(0, 50)
+    const colorArr = [n1, n2, n3]
+    colorArr.shuffle()
+    return `rgba(${colorArr[0]},${colorArr[1]},${colorArr[2]},0.8)`
+  }
+
+  class Particle {
+    constructor(x, y) {
+      this.x = x
+      this.y = y
+      this.color = generateColor()
+      this.size = randomFloat(7, 15)
+      this.setStartPos(x, y)
+    }
+
+    get speedX() {
+      return (this.startX - this.x) / 10
+    }
+
+    get speedY() {
+      return (this.startY - this.y) / 10
+    }
+
+    setStartPos(x, y) {
+      const radian = randomFloat(0, 2 * Math.PI)
+      const offset = randomInt(document.body.clientHeight / 2, document.body.clientWidth / 2)
+      this.startX = x + Math.cos(radian) * offset
+      this.startY = y + Math.sin(radian) * offset
+      this.x = this.startX
+      this.y = this.startY
+    }
+
+    move() {
+      const {
+        x,
+        y,
+        startX,
+        startY,
+        speedX,
+        speedY
+      } = this
+      if (startX !== x || startY !== y) {
+        this.startY = Math.floor(startY) === y ? y : startY - speedY
+        this.startX = Math.floor(startX) === x ? x : startX - speedX
+      }
+    }
+
+    static getOffScreenPos() {
+      const w = document.body.clientWidth
+      const h = document.body.clientHeight
+      const radius = Math.sqrt(w ** 2 + h ** 2)
+      const radian = randomFloat(-Math.PI / 4, Math.PI / 4)
+      const x = w + Math.cos(radian) * radius
+      const y = h + Math.sin(radian) * radius
+      return {
+        x,
+        y
+      }
+    }
+  }
+
+  (function () {
+    const canvas = document.querySelector('canvas')
+    if (!canvas?.getContext ?? true) return
+    const W = canvas.width = document.body.clientWidth
+    const H = canvas.height = document.body.clientHeight
+    const particleNum = 500
+    const ctx = canvas.getContext('2d')
+    const particles = []
+
+    /**
+     * 根据ImageData获取字的像素坐标，每隔12个像素取一个
+     * @returns {[]} 返回{x,y}格式的坐标对象
+     */
+    function getTextPosArr() {
+      const date = new Date()
+      ctx.fillStyle = 'red'
+      ctx.font = '300px Avenir'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      const text = date.format('hh:mm:ss')
+      // const text = date.format('88:88:88')
+      ctx.fillText(text, W / 2, H / 2)
+
+      const imgData = ctx.getImageData(0, 0, W, H).data
+      const posArr = []
+      for (let j = 0; j < W; j += 15) {
+        for (let i = 0; i < H; i += 15) {
+          if (imgData[(i * W + j) * 4] > 0) {
+            posArr.push({
+              x: j,
+              y: i
+            })
+          }
+        }
+      }
+      ctx.clearRect(0, 0, W, H)
+      return posArr
+    }
+
+    function init() {
+      const posArr = getTextPosArr()
+      for (let i = 0; i < particleNum; i++) {
+        const pos = posArr[i] ?? Particle.getOffScreenPos()
+        particles.push(new Particle(pos.x, pos.y))
+      }
+      ctx.globalCompositeOperation = 'lighten'
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, W, H)
+      const posArr = getTextPosArr()
+      for (let i = 0; i < particles.length; i++) {
+        const particle = particles[i]
+        let pos = posArr[i] ?? Particle.getOffScreenPos()
+        particle.x = pos.x
+        particle.y = pos.y
+      }
+      posArr.forEach((pos, i) => {
+        particles[i].x = pos.x
+        particles[i].y = pos.y
+      })
+      for (const particle of particles) {
+        ctx.beginPath()
+        ctx.arc(particle.startX, particle.startY, particle.size, 0, 2 * Math.PI)
+        ctx.fillStyle = particle.color
+        ctx.fill()
+        ctx.closePath()
+        if (particle.startX !== particle.x || particle.startY !== particle.y) {
+          particle.move()
+        }
+      }
+      requestAnimationFrame(render)
+    }
+
+    init()
+    render()
+
+  })()
+</script>
+</html>
