@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Title</title>
+  <title>时间动画</title>
   <style>
     html, body {
       width: 100%;
@@ -16,6 +16,16 @@
 <canvas></canvas>
 </body>
 <script>
+  /*
+    实现思路：
+      1.获取本地事件，然后绘制到canvas上（文字一定要有颜色）
+      2.利用getImageData获取文字的像素坐标（每四个数据为一个坐标的颜色值，第四个数据不为0时为文字的一个像素），
+        为了点位看起来不那么密集，可以设定每隔一定距离取一个像素点
+        小技巧：遍历数据时由y及x会将图像变化达到最小
+      3.生成最大像素点点数（88:88:88所需要的像素点数比较多）
+      4.初始渲染时将各粒子点位打断，然后获取时间文本点位，设置点位运动终点为像素点位
+      5.每一帧动画由开始点位往终点点位移动一段距离
+   */
   Array.prototype.shuffle = function () {
     const arr = this
     for (let i = 0; i < arr.length; i++) {
