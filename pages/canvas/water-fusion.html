@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>水滴融合动画</title>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      padding: 0;
+      margin: 0;
+      filter: contrast(7);
+    }
+
+    canvas {
+      filter: contrast(7);
+    }
+  </style>
+</head>
+<body>
+<canvas></canvas>
+</body>
+<script>
+
+  /*
+    实现思路：
+      核心内容：
+        css过滤：https://developer.mozilla.org/zh-CN/docs/Web/CSS/filter
+        canvas过滤：https://developer.mozilla.org/zh-CN/docs/Web/API/CanvasRenderingContext2D/filter
+
+      水滴融合效果实现原理
+        画布的图形设置高斯模糊（blur(17px)），具体多少模糊需要自己调试
+        画布的父容器提高图像对比度（css contrast(7)）
+
+      使用到的数学知识：
+        勾股定理（a²+b²=c²）：判断某个点是否在圆的范围内
+        圆的面积（πr²）
+        根据面积算出半径（√(s/π)）
+
+      小技巧：
+        本例子所有图形都是圆形，可以逐个将图形添加到Path2D中，最后一次性绘制所有图形，性能会有所提升（频繁调用上下文将会导致动画非常卡顿）
+        最小可视半径不为1，要远远大于这个数
+  */
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min)
+  }
+
+  class Drop {
+    constructor(radius, x, y) {
+      const {
+        clientHeight,
+        clientWidth
+      } = document.body
+      this.startX = this.x = x || clientWidth / 2
+      this.startY = this.y = y || clientHeight / 2
+      this.radius = radius
+    }
+
+    get finished() {
+      const {
+        startX,
+        startY,
+        x,
+        y,
+        radius
+      } = this
+      return startX > x - radius && startX < x + radius && startY > y - radius && startY < y + radius
+    }
+
+    //通过Path2D将圆添加到画布上
+    draw(path) {
+      const {
+        startX,
+        startY,
+        radius
+      } = this
+      path.arc(startX, startY, radius, 0, Math.PI * 2)
+      path.closePath()
+    }
+
+    // 水滴偏移越远移动越缓慢
+    move() {
+      const {
+        startX,
+        startY,
+        x,
+        y,
+        finished
+      } = this
+      if (!finished) {
+        const xStep = (startX - x) / 200
+        const yStep = (startY - y) / 200
+        this.startX -= xStep
+        this.startY -= yStep
+      }
+    }
+
+    /**
+     * 判断某点是否在另一点的半径范围内
+     * @param x1 点1的x轴坐标
+     * @param y1 点1的y轴坐标
+     * @param x2 点2的x轴坐标
+     * @param y2 点2的y轴坐标
+     * @param radius 半径
+     * @returns {boolean} 返回是否在半径范围内
+     */
+    static isInCircle(x1, y1, x2, y2, radius) {
+      const xStep = x1 - x2
+      const yStep = y1 - y2
+      return radius > Math.sqrt(xStep * xStep + yStep * yStep)
+    }
+  }
+
+  (function () {
+    const canvas = document.querySelector('canvas')
+    if (!canvas?.getContext ?? true) return
+    const ctx = canvas.getContext('2d')
+    const W = canvas.width = document.body.clientWidth
+    const H = canvas.height = document.body.clientHeight
+    const drops = []//所有水滴
+    const fused = []//需要融合的水滴
+    let chosenDrop = null
+
+    for (let i = 0; i < 200; i++) {
+      drops.push(new Drop(randomInt(21, 40), randomInt(0, W), randomInt(0, H)))
+    }
+
+    ctx.fillStyle = '#41b8dc'
+    ctx.filter = ' blur(17px)'
+
+    canvas.addEventListener('mousedown', (e) => {
+      //越后面绘制的形状在越上层，所以使用倒序
+      for (let i = drops.length - 1; i >= 0; i--) {
+        const drop = drops[i]
+        if (Drop.isInCircle(drop.x, drop.y, e.x, e.y, drop.radius)) {
+          chosenDrop = drops[i]
+          break
+        }
+      }
+    })
+    canvas.addEventListener('mousemove', e => {
+      if (chosenDrop) {
+        chosenDrop.startX = chosenDrop.x = e.clientX
+        chosenDrop.startY = chosenDrop.y = e.clientY
+        for (const drop of drops) {
+          if (drop === chosenDrop) continue
+          const includes = fused.includes(drop)
+          const inPath = Drop.isInCircle(chosenDrop.x, chosenDrop.y, drop.x, drop.y, chosenDrop.radius * 1.5)
+          // 在选中水滴1.5倍半径内，且不包含在融合数组中，且比选中的水滴要小（如果比选中的大或者一样大这不融合）
+          if (!includes && inPath && drop.radius < chosenDrop.radius) {
+            drop.x = chosenDrop.x
+            drop.y = chosenDrop.y
+            fused.push(drop)
+          } else if (drop.radius > 21 && Drop.isInCircle(chosenDrop.x, chosenDrop.y, drop.x, drop.y, chosenDrop.radius)) {
+            // 在选中水滴1.5倍半径内，且半径大于可视大小，相互融合
+            const dropArea = (drop.radius ** 2) * Math.PI
+            drop.radius - 1 > 21 ? drop.radius -= 1 : {}
+            const decreasingArea = dropArea - (drop.radius ** 2) * Math.PI
+            chosenDrop.radius = Math.sqrt(((chosenDrop.radius ** 2) * Math.PI + decreasingArea) / Math.PI)
+          }
+        }
+        //将要融合的水滴位置实时跟新为选中水滴的中心点。
+        // 会有如下表现：
+        //    1. 如果选中水滴移动，未融合的水滴会跟着飘走
+        //    2. 未融合水滴可能会被甩出选中水滴
+        fused.forEach(drop => {
+          drop.x = chosenDrop.x
+          drop.y = chosenDrop.y
+        })
+        render(true)
+      }
+    })
+    canvas.addEventListener('mouseup', () => {
+      chosenDrop = null
+    })
+
+    function render(drag) {
+      const path = new Path2D()
+      ctx.clearRect(0, 0, W, H)
+      fused.forEach(drop => {
+        if (drop.finished) {
+          const index = drops.findIndex(d => d === drop)
+          index !== -1 && drops.splice(index, 1)
+          fused.splice(fused.findIndex(d => d === drop), 1)
+        }
+      })
+      drops.forEach(drop => {
+        drop.draw(path)
+        drop.move()
+      })
+      ctx.fill(path)
+
+      ;['boolean', 'number', 'undefined'].includes(typeof drag) && (typeof drag === 'number' || !drag) && requestAnimationFrame(render)
+    }
+
+    render()
+    alert('鼠标拖动某一水滴，靠近其他水滴时会有融合效果')
+  })()
+</script>
+</html>
