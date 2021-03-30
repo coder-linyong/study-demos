@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      padding: 0;
+      margin: 0;
+    }
+
+    body {
+      display: grid;
+      place-content: center;
+    }
+
+    canvas {
+      border: #fff 1px solid;
+    }
+  </style>
+</head>
+<body>
+<canvas></canvas>
+</body>
+<script>
+  /*
+    网格：协助检查程序是否有误 ✅
+    画布大小：能放下的最大数量网格的宽高 ✅
+
+    四个类：
+      头部
+        位置（头一个网格为一个像素位置）
+        颜色
+
+      身体
+        位置（一个网格为一个像素位置）
+        颜色
+
+      蛇
+        部件（头部，身体）
+        方向：上下左右
+        移动：朝着某个方向移动（改变头部的位置，头部之前的位置给第一个部件，
+             第一个身体部件之前的位置给第二个身体部件，如此往复，直到最后
+             一个身体部件），可穿屏；如果移动位置是如何一节身体，则死亡
+        进食：当头部进入食物范围内将食物吃掉，同时新增一个身体部件
+
+      方块
+        位置
+        颜色
+
+      如何确定位置？
+      计算基于网格像素x、y，绘制时根据网格大小计算方块
+   */
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min)
+  }
+
+  class Part {
+    constructor(x, y, color) {
+      this.x = x
+      this.y = y
+      this.color = color
+    }
+  }
+
+  class Header extends Part {
+    constructor(x, y, color = '#bb1a1a') {
+      super(x, y, color)
+    }
+  }
+
+  class Body extends Part {
+    constructor(x, y, color = '#fff') {
+      super(x, y, color)
+    }
+  }
+
+  class Snake {
+    constructor(maxX, maxY, direction = 'right') {
+      let startX = 6
+      this.driection = direction
+      this.maxX = maxX
+      this.maxY = maxY
+      this.parts = [
+        new Header(startX--, 1),
+        new Body(startX--, 1),
+        new Body(startX--, 1),
+        new Body(startX--, 1),
+      ]
+    }
+
+    get x() {
+      return this.parts[0].x
+    }
+
+    set x(x) {
+      this.parts[0].x = x
+    }
+
+    get y() {
+      return this.parts[0].y
+    }
+
+    set y(y) {
+      this.parts[0].y = y
+    }
+
+    get isDead() {
+      return this.parts.findIndex(part => part instanceof Body && part.x === this.x && part.y === this.y) !== -1
+    }
+
+    move(foodX, foodY, callback) {
+      const {
+        driection,
+        maxY,
+        maxX,
+        parts
+      } = this
+      let tem
+      for (let i = parts.length - 1; i > 0; i--) {
+        const part = parts[i]
+        if (i === parts.length - 1) {
+          tem = {
+            x: part.x,
+            y: part.y
+          }
+        }
+        part.x = parts[i - 1].x
+        part.y = parts[i - 1].y
+      }
+      switch (driection) {
+        case 'up':
+          this.y = this.y <= 1 ? maxY : this.y - 1
+          break
+        case 'right':
+          this.x = this.x >= maxX ? 1 : this.x + 1
+          break
+        case 'down':
+          this.y = this.y >= maxY ? 1 : this.y + 1
+          break
+        case 'left':
+          this.x = this.x <= 1 ? maxX : this.x - 1
+      }
+      if (this.x === foodX && this.y === foodY) {
+        parts.push(new Body(tem.x, tem.y))
+        callback && callback()
+      }
+    }
+  }
+
+  class Food {
+    constructor(maxX, maxY, color = '#0cdb47') {
+      this.maxX = maxX
+      this.maxY = maxY
+      this.color = color
+      this.randomPos()
+    }
+
+    randomPos() {
+      const {
+        maxX,
+        maxY
+      } = this
+      this.x = randomInt(1, maxX)
+      this.y = randomInt(1, maxY)
+    }
+  }
+
+  (function () {
+    const canvas = document.querySelector('canvas')
+    if (!canvas?.getContext ?? true) return
+    const ctx = canvas.getContext('2d')
+    const gridSize = 50
+    const maxX = ~~(document.body.clientWidth / gridSize)
+    const maxY = ~~(document.body.clientHeight / gridSize)
+    const W = canvas.width = maxX * gridSize
+    const H = canvas.height = maxY * gridSize
+    const snake = new Snake(maxX, maxY)
+    const food = new Food(maxX, maxY)
+    const gridPath = renderGrid(ctx)
+
+    function renderGrid(ctx, color = '#6d6b6b') {
+      const gridPath = new Path2D()
+      for (let x = 0; x <= W + 1; x += gridSize) {
+        gridPath.moveTo(x, 0)
+        gridPath.lineTo(x, H)
+        gridPath.closePath()
+      }
+
+      for (let y = 0; y <= H + 1; y += gridSize) {
+        gridPath.moveTo(0, y)
+        gridPath.lineTo(W, y)
+        gridPath.closePath()
+      }
+      ctx.strokeStyle = color
+      ctx.lineWidth = 1
+      ctx.stroke(gridPath)
+      return gridPath
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, W, H)
+      ctx.stroke(gridPath)
+      for (const part of snake.parts) {
+        ctx.fillStyle = part.color
+        ctx.fillRect((part.x - 1) * gridSize, (part.y - 1) * gridSize, gridSize, gridSize)
+      }
+      ctx.fillStyle = food.color
+      ctx.fillRect((food.x - 1) * gridSize, (food.y - 1) * gridSize, gridSize, gridSize)
+      if (!snake.isDead) {
+        snake.move(food.x, food.y, () => food.randomPos())
+      }
+    }
+
+    /*window.addEventListener('keyup', ev => {
+      if (ev.code === 'ArrowDown') {
+        snake.driection !== 'up' && (snake.driection = 'down')
+      } else if (ev.code === 'ArrowLeft') {
+        snake.driection !== 'right' && (snake.driection = 'left')
+      } else if (ev.code === 'ArrowRight') {
+        snake.driection !== 'left' && (snake.driection = 'right')
+      } else if (ev.code === 'ArrowUp') {
+        snake.driection !== 'down' && (snake.driection = 'up')
+      }
+    })*/
+    window.addEventListener('keyup', ev => {
+      if (ev.code === 'ArrowDown') {
+        snake.driection !== 'down' && (snake.driection = 'up')
+      } else if (ev.code === 'ArrowLeft') {
+        snake.driection !== 'left' && (snake.driection = 'right')
+      } else if (ev.code === 'ArrowRight') {
+        snake.driection !== 'right' && (snake.driection = 'left')
+      } else if (ev.code === 'ArrowUp') {
+        snake.driection !== 'up' && (snake.driection = 'down')
+      }
+    })
+
+    render()
+    setInterval(render, 100)
+  })()
+</script>
+</html>
