@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>音乐播放器</title>
+  <link rel="stylesheet" href="//at.alicdn.com/t/font_2544523_sg8u6er4whh.css">
+  <style>
+    html, body {
+      padding: 0;
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+
+      --primary: #870921;
+      --second: #802024;
+      --white: #f9f7f0;
+      --lightYellow: #d3af8c;
+      --darkYellow: #c18c62;
+    }
+
+    body {
+      display: grid;
+      align-content: center;
+      justify-content: center;
+      align-items: center;
+    }
+
+    body::before {
+      position: absolute;
+      z-index: -2;
+      content: '';
+      background: url("img/bg.jpg");
+      background-size: cover;
+      filter: blur(1px);
+      width: 100%;
+      height: 100%;
+      transition: .8s all;
+    }
+
+    body::after {
+      position: absolute;
+      z-index: -1;
+      content: '';
+      /*background: rgba(255,255,255,.8);*/
+      width: 100%;
+      height: 100%;
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      background: rgba(0, 0, 0, 0);
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-button {
+      display: none;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      width: 5px;
+      background: var(--primary);
+    }
+
+
+    .video-info {
+      color: var(--white);
+      font-size: 24px;
+      user-select: none;
+    }
+
+    .control {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      z-index: 9;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-content: center;
+      justify-content: space-evenly;
+      align-items: center;
+      width: 100%;
+      height: 100px;
+      background: rgba(230, 204, 180, .5);
+      user-select: none;
+    }
+
+    input[type=file] {
+      display: none;
+    }
+
+    button {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: var(--primary);
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: rgba(189, 30, 64, 0.99);
+    }
+
+    button:active {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: rgba(222, 43, 74, 0.99);
+    }
+
+    button .iconfont {
+      font-size: 50px;
+    }
+
+    button .iconfont.small {
+      font-size: 25px;
+    }
+
+    .progress {
+      display: flex;
+      width: 50%;
+      height: 100%;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-content: center;
+      justify-content: center;
+      color: var(--primary);
+    }
+
+    .progress > div {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-content: center;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    input[type="range"] {
+      background: linear-gradient(90deg, #daa981 0%, #c67d7e 50%, var(--primary) 100%);
+      border-radius: 35px;
+      -webkit-appearance: none;
+      height: 5px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      top: 50%;
+      -webkit-appearance: none;
+      cursor: pointer;
+      height: 20px;
+      width: 20px;
+      background: none repeat scroll 0 0 var(--primary);
+      border-radius: 15px;
+    }
+
+    .rang-inner {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      display: none;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-content: center;
+      justify-content: center;
+      align-items: center;
+      background: var(--darkYellow);
+    }
+
+    .popup-btn {
+      position: relative;
+    }
+
+    .rang-inner.show {
+      display: flex;
+    }
+
+    .speed-progress {
+      top: -41px;
+      left: 50%;
+      width: 200px;
+      height: 50px;
+    }
+
+    .volume-range-inner {
+      top: -37px;
+      left: 50%;
+      width: 60px;
+      height: 200px;
+    }
+
+    .volume-range-inner > input {
+      transform: rotate(270deg);
+    }
+
+    .order-inner {
+      transform: translate(-50%, -204px);
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-content: space-around;
+      justify-content: center;
+      align-items: center;
+      width: 100px;
+      padding: 10px;
+    }
+
+    .order-item {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-content: center;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      height: 30px;
+    }
+
+    .order-item i {
+      font-size: 20px;
+    }
+
+    .list-inner {
+      position: fixed;
+      right: 0;
+      bottom: 100px;
+      width: 340px;
+      height: 500px;
+      overflow-y: scroll;
+      transform: none;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      overflow-x: hidden;
+    }
+
+    .list-inner header {
+      display: flex;
+      width: 100%;
+      height: 30px;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-content: center;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .list-inner .content {
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      flex: 1;
+      width: 100%;
+    }
+
+    .list-inner .content .item {
+      display: flex;
+      width: 100%;
+      height: 30px;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-content: center;
+      justify-content: space-between;
+      text-align: left;
+      padding: 5px;
+    }
+
+    .list-inner .content .item > div:nth-child(1) {
+      width: 15px;
+      margin-right: 10px;
+    }
+
+    .list-inner .content .item > div:nth-child(2) {
+      flex: 1;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+<body>
+<div class="video-info" id="info">
+  HITA-赤伶
+</div>
+<div class="control">
+  <input type="file" id="file" multiple accept="audio/*">
+  <audio src=""></audio>
+  <button id="previous" title="上一曲">
+    <i class="iconfont icon-previous"></i>
+  </button>
+  <button id="play" title="播放">
+    <i class="iconfont icon-play"></i>
+  </button>
+  <button id="next" title="下一曲">
+    <i class="iconfont icon-next"></i>
+  </button>
+  <img src="img/defalut-cover.jpg" width="100" height="100" alt="">
+  <div class="progress">
+    <div>
+      <div id="audio-message"></div>
+      <div>
+        <span id="real-time">00:00</span>
+        <span>/</span>
+        <span id="total-time">-:-</span>
+      </div>
+    </div>
+    <input type="range" id="progress" value="0" min="0">
+  </div>
+  <button class="popup-btn" id="speed-btn">
+    <span>1.0</span><span>x</span>
+    <div class="rang-inner speed-progress" popup-inner id="speed-progress">
+      <input type="range" poupu-range min=".5" max="4" value="1" id="speed-range" step=".25">
+    </div>
+  </button>
+  <button class="popup-btn" id="volume-btn">
+    <i class="iconfont icon-sound-big small"></i>
+    <div class="rang-inner volume-range-inner" popup-inner id="volume-range-inner">
+      <input type="range" poupu-range min="0" max="1" value="1" id="volume-range" step=".1">
+    </div>
+  </button>
+  <button id="order-btn" class="popup-btn">
+    <i class="iconfont icon-loop small" title="列表循环"></i>
+    <div class="rang-inner order-inner" popup-inner id="order-inner">
+    </div>
+  </button>
+  <button id="list-btn">
+    <i class="iconfont icon-list small" title="播放列表"></i>
+    <div class="rang-inner list-inner" popup-inner id="play-list">
+      <header>
+        <i class="iconfont icon-delete small" title="播放列表" id="clear" title="清空列表"></i>
+      </header>
+      <div class="content" id="list-content">
+
+      </div>
+    </div>
+  </button>
+  <button id="select-btn">
+    <i class="iconfont icon-select small" title="选择音乐文件"></i>
+  </button>
+</div>
+</body>
+<script>
+  const songList = [
+    {
+      name: 'HITA-赤伶',
+      url: './resources/HITA-赤伶.flac'
+    },
+    {
+      name: 'HITA&小时姑娘-同簪',
+      url: './resources/小时-同簪.flac'
+    },
+    {
+      name: '音频怪物-琴师',
+      url: './resources/音频怪物-琴师.flac'
+    },
+    {
+      name: '李常超-长安姑娘',
+      url: './resources/李常超-长安姑娘.flac'
+    },
+    {
+      name: '萧忆情Alex-不谓侠',
+      url: './resources/萧忆情Alex-不谓侠.flac'
+    },
+    {
+      name: '群星-同道殊途',
+      url: './resources/HITA&裂天&三无Marblue&佑可猫&吾恩&Assen捷&Aki阿杰&W.K.&特曼&荷笙&CV图特哈蒙&人衣大人&泠鸢yousa-同道殊途.mp3'
+    },
+    {
+      name: '黄诗扶-人间不值得',
+      url: './resources/黄诗扶-人间不值得.flac'
+    },
+    {
+      name: '河图-如花',
+      url: './resources/河图-如花.flac'
+    },
+  ]
+  const audio = document.querySelector('audio')
+  const playBtn = document.getElementById('play')
+  const listContent = document.getElementById('list-content')
+  const file = document.getElementById('file')
+  const progress = document.getElementById('progress')
+  let timer
+  const popups = [
+    {
+      id: 'speed-btn',
+      fn(ev) {
+        const {
+          target,
+          target: { value }
+        } = ev
+        ev.stopPropagation()
+        audio.playbackRate = value
+        target.parentElement.parentElement.querySelector('span').innerText = value
+      }
+    },
+    {
+      id: 'volume-btn',
+      fn(ev) {
+        const {
+          target,
+          target: { value }
+        } = ev
+        const i = target.parentElement.parentElement.querySelector('i')
+
+        ev.stopPropagation()
+        audio.volume = value
+
+        i.classList.remove('icon-sound-big')
+        i.classList.remove('icon-sound-small')
+        i.classList.remove('icon-mute')
+
+        if (value > .5) {
+          i.classList.add('icon-sound-big')
+        } else if (value > 0) {
+          i.classList.add('icon-sound-small')
+        } else {
+          i.classList.add('icon-mute')
+        }
+      }
+    },
+    {
+      id: 'order-btn',
+      fn(ev) {
+
+      }
+    },
+    {
+      id: 'list-btn',
+      fn(ev) {
+
+      }
+    }
+  ]
+  let changeSong = stepSong
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min)
+  }
+
+  function stepSong(num = 1) {
+    const index = songList.findIndex(val => {
+      if (val.url.includes('resources')) {
+        return decodeURI(audio.src)
+          .includes(val.name)
+      }
+      return val.url === audio.src
+    })
+    if (index !== -1) {
+      let song
+      if (num > 0) {
+        song = songList[index + num >= songList.length ? 0 : index + num]
+      } else if (num < 0) {
+        song = songList[index + num < 0 ? songList.length - 1 : index + num]
+      }
+      audio.src = song.url
+      setInfo(song.name)
+    }
+  }
+
+  function setInfo(name) {
+    document.getElementById('audio-message').innerText = name
+    document.getElementById('info').innerText = name
+  }
+
+  function setTime(time, type = 'total') {
+    const minute = parseInt(time / 60)
+    const second = Math.floor(time % 60)
+    document.getElementById(type === 'total' ? 'total-time' : 'real-time').innerText = `${minute < 10 ? '0' : ''}${minute}:${second < 10 ? '0' : ''}${second}`
+  }
+
+  /**
+   * 初始化弹出内容
+   *  1.触发dom添加特定的标记
+   *  2.配置相关内容，通过循环统一处理
+   */
+  function initPopupContent() {
+    const popupInners = document.querySelectorAll('div[popup-inner]')
+    for (let i = 0; i < popups.length; i++) {
+      const popup = popups[i]
+      const inner = popupInners[i]
+      const btn = document.getElementById(popup.id)
+      const range = btn.querySelector('input[type=range]')
+      btn.addEventListener('click', ev => {
+        const { target } = ev
+        ev.stopPropagation()
+        for (let i = 0; i < popupInners.length; i++) {
+          if (btn.contains(popupInners[i])) {
+            popupInners[i].classList.toggle('show')
+            continue
+          }
+          popupInners[i].classList.remove('show')
+        }
+      })
+      inner.addEventListener('click', ev => {
+        ev.stopPropagation()
+      })
+      if (range) {
+        range.addEventListener('click', ev => {
+          ev.stopPropagation()
+        })
+        range.addEventListener('input', popup.fn)
+      } else {
+        inner.addEventListener('click', popup.fn)
+      }
+    }
+  }
+
+  //初始化
+  window.addEventListener('load', ev => {
+    const song = songList[0]
+    const orderInner = document.getElementById('order-inner')
+    const orderOptions = [
+      {
+        icon: 'icon-order',
+        text: '顺序播放',
+        fn: stepSong
+      },
+      {
+        icon: 'icon-loop',
+        text: '列表循环',
+        fn: stepSong
+      },
+      {
+        icon: 'icon-random',
+        text: '随机播放',
+        fn() {
+          const song = songList[randomInt(0, songList.length - 1)]
+          setInfo(song.name)
+          audio.src = song.url
+        }
+      },
+      {
+        icon: 'icon-single',
+        text: '单曲循环',
+        fn() {
+          audio.currentTime = 0
+        }
+      },
+    ]
+    audio.src = `${song.url}`
+    setInfo(song.name)
+
+    //点击不是弹出内容时
+    document.body.addEventListener('click', e => {
+      const { target } = e
+      for (const popup of popups) {
+        const inner = document.querySelector(`#${popup.id} > div`)
+        if (target !== inner && !inner.contains(target)) {
+          inner.classList.remove('show')
+        }
+      }
+    })
+
+    initPopupContent()
+
+    for (const orderOption of orderOptions) {
+      const div = document.createElement('div')
+      const i = document.createElement('i')
+      const span = document.createElement('span')
+
+      i.classList.add('iconfont', orderOption.icon)
+      div.className = 'order-item'
+      span.innerText = orderOption.text
+
+      div.addEventListener('click', ev => {
+        const i = orderInner.parentElement.querySelector('i')
+        changeSong = orderOption.fn
+        orderOptions.forEach(option => i.classList.remove(option.icon))
+        i.setAttribute('title', orderOption.text)
+        i.classList.add(orderOption.icon)
+      })
+
+      div.append(i, span)
+      orderInner.append(div)
+    }
+  })
+
+  //播放暂停
+  playBtn.addEventListener('click', () => {
+    const i = playBtn.querySelector('i')
+    if (audio.paused) {
+      audio.play()
+    } else if (audio.played) {
+      audio.pause()
+    } else {
+      audio.play()
+    }
+  })
+
+  //音频事件
+  audio.addEventListener('canplaythrough', function () {
+    this.play()
+  })
+  audio.addEventListener('canplay', ev => {
+    setTime(audio.duration)
+    progress.max = audio.duration
+
+  })
+  audio.addEventListener('playing', ev => {
+    timer = setInterval(() => {
+      progress.value = audio.currentTime
+      setTime(audio.currentTime, 'real')
+    }, 1000)
+  })
+  audio.addEventListener('play', () => {
+    const i = playBtn.querySelector('i')
+    i.classList.remove('icon-play')
+    i.classList.add('icon-pause')
+  })
+  audio.addEventListener('pause', () => {
+    const i = playBtn.querySelector('i')
+    i.classList.add('icon-play')
+    i.classList.remove('icon-pause')
+    clearInterval(timer)
+  })
+  audio.addEventListener('ended', () => {
+    changeSong()
+  })
+
+  //上一曲下一曲
+  document.getElementById('next')
+    .addEventListener('click', () => {
+      changeSong(1)
+    })
+  document.getElementById('previous')
+    .addEventListener('click', () => {
+      changeSong(-1)
+    })
+
+  // 播放列表
+  function initList() {
+    listContent.innerHTML = ''
+    for (let i = 0; i < songList.length; i++) {
+      const song = songList[i]
+      const div = document.createElement('div')
+      div.classList.add('item')
+      div.innerHTML = `<div>${i + 1}</div><div title="${song.name}">${song.name}</div>`
+      div.addEventListener('click', ev => {
+        audio.src = song.url
+        setInfo(song.name)
+      })
+
+      listContent.append(div)
+    }
+  }
+
+  //清空播放列表
+  document.getElementById('clear')
+    .addEventListener('click', () => {
+      console.log('clear')
+      listContent.innerHTML = ''
+      songList.length = 0
+      audio.src = ''
+
+      initList()
+    })
+  initList()
+
+  //todo 选择文件播放
+
+  function selectFile(files) {
+    const songs = Array.from(files)
+      .map(file => ({
+        name: file.name,
+        url: URL.createObjectURL(file)
+      }))
+    if (songList.length === 0) {
+      audio.src = songs[0].url
+      setInfo(songs[0].name)
+    }
+    songList.push(...songs)
+    initList()
+  }
+
+  document.getElementById('select-btn')
+    .addEventListener('click', () => {
+      file.click()
+    })
+  file.addEventListener('change', (ev) => {
+    selectFile(ev.target.files)
+  })
+
+  //todo 拖拽文件播放
+  function dropHander(ev) {
+    ev.preventDefault()
+    if (ev.type === 'drop') {
+      selectFile(ev.dataTransfer.files)
+    } else if (ev.type === 'dragenter') {
+
+    }
+  }
+
+  document.addEventListener('drop', dropHander)
+  document.addEventListener('dragenter', dropHander)
+  document.addEventListener('dragover', dropHander)
+  document.addEventListener('dragleave', dropHander)
+
+  //播放进度手动调动
+  progress.addEventListener('input', function () {
+    audio.currentTime = this.value
+    setTime(this.value, 'real')
+  })
+</script>
+</html>
