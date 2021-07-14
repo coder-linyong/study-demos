@@ -350,7 +350,7 @@
       url: './resources/HITA-赤伶.flac'
     },
     {
-      name: 'HITA&小时姑娘-同簪',
+      name: '小时-同簪',
       url: './resources/小时-同簪.flac'
     },
     {
@@ -663,7 +663,9 @@
   //todo 选择文件播放
 
   function selectFile(files) {
+    console.log(files)
     const songs = Array.from(files)
+      .filter(file => audio.canPlayType(file.type))
       .map(file => ({
         name: file.name,
         url: URL.createObjectURL(file)
