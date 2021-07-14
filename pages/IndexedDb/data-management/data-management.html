@@ -4,60 +4,60 @@
   <meta charset="UTF-8">
   <title>数据管理</title>
   <style>
-    html, body {
-      padding: 0;
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      --border: 1px solid #1BCE6F;
-    }
+      html, body {
+          padding: 0;
+          margin: 0;
+          width: 100%;
+          height: 100%;
+          --border: 1px solid #1BCE6F;
+      }
 
-    body {
-      display: flex;
-      flex-direction: column;
-    }
+      body {
+          display: flex;
+          flex-direction: column;
+      }
 
-    header {
-      display: flex;
-      flex-wrap: nowrap;
-      align-content: center;
-      justify-content: space-around;
-      align-items: center;
-      width: 100%;
-      height: 100px;
-      border-bottom: var(--border);
-    }
+      header {
+          display: flex;
+          flex-wrap: nowrap;
+          align-content: center;
+          justify-content: space-around;
+          align-items: center;
+          width: 100%;
+          height: 100px;
+          border-bottom: var(--border);
+      }
 
-    section {
-      flex: 1;
-      overflow: hidden;
-    }
+      section {
+          flex: 1;
+          overflow: hidden;
+      }
 
-    section > table {
-      width: 100%;
-      max-height: 100%;
-      overflow-y: scroll;
-      text-align: center;
-    }
+      section > table {
+          width: 100%;
+          max-height: 100%;
+          overflow-y: scroll;
+          text-align: center;
+      }
 
-    section > table > thead {
-      background: #1BCE6F;
-    }
+      section > table > thead {
+          background: #1BCE6F;
+      }
 
-    section > table > tbody {
-      background: #a88d6d;
-    }
+      section > table > tbody {
+          background: #a88d6d;
+      }
 
-    footer {
-      display: flex;
-      flex-wrap: nowrap;
-      align-content: center;
-      justify-content: space-around;
-      align-items: center;
-      width: 100%;
-      height: 100px;
-      border-top: var(--border);
-    }
+      footer {
+          display: flex;
+          flex-wrap: nowrap;
+          align-content: center;
+          justify-content: space-around;
+          align-items: center;
+          width: 100%;
+          height: 100px;
+          border-top: var(--border);
+      }
   </style>
 </head>
 <body>
@@ -112,97 +112,98 @@
 <script src="js/db.js" type="module"></script>
 <script src="js/tool.js" type="module"></script>
 <script type="module">
-  import Db from './js/db.js'
-  import { $q,$qa } from './js/tool.js'
+    import Db from './js/db.js'
+    import {$q, $qa} from './js/tool.js'
 
-  function setSelects(data, ...selects) {
-    const fragment = document.createDocumentFragment()
+    function setSelects(data, ...selects) {
+        const fragment = document.createDocumentFragment()
 
-    for (const type of ['', ...data]) {
-      const option = document.createElement('option')
-      option.value = type
-      option.innerText = type
-      fragment.appendChild(option)
+        for (const type of ['', ...data]) {
+            const option = document.createElement('option')
+            option.value = type
+            option.innerText = type
+            fragment.appendChild(option)
+        }
+
+        for (const select of selects) {
+            select.appendChild(fragment.cloneNode(true))
+        }
     }
 
-    for (const select of selects) {
-      select.appendChild(fragment.cloneNode(true))
-    }
-  }
+    (async function () {
+        const typeDom = $q('#type')
+        const typeDom2 = $q('#type2')
+        const brandSelect = $q('#brand-select')
+        const brandInput = $q('#brand2')
+        const nameInput = $q('#name')
+        const priceInput = $q('#price')
+        const searchBtn = $q('#search')
+        const tbody = $q('table>tbody')
+        const addBtn = $q('#add')
 
-  (async function () {
-    const typeDom = $q('#type')
-    const typeDom2 = $q('#type2')
-    const brandSelect = $q('#brand-select')
-    const brandInput = $q('#brand2')
-    const nameInput = $q('#name')
-    const priceInput = $q('#price')
-    const searchBtn = $q('#search')
-    const tbody = $q('table>tbody')
-    const addBtn = $q('#add')
+        const db = new Db('data', 1)
+        await db.open()
+        db.getEnum('brand')
+            .then(brands => {
+                setSelects(brands, brandSelect)
+            })
 
-    const db = new Db('data', 1)
-    await db.open()
-    db.getEnum('brand')
-      .then(brands => {
-        setSelects(brands, brandSelect)
-      })
+        async function addData() {
+            if (!typeDom2.value) {
+                alert('请选择类型')
+                return
+            }
+            if (!brandInput.value) {
+                alert('请输入品牌')
+                return
+            }
 
-    async function addData() {
-      if (!typeDom2.value) {
-        alert('请选择类型')
-        return
-      }
-      if (!brandInput.value) {
-        alert('请输入品牌')
-        return
-      }
-
-      await db.put({
-        type: typeDom2.value,
-        brand: brandInput.value,
-        name: nameInput.value || '商品',
-        price: +priceInput.value,
-      })
-      search()
-    }
-
-    async function search() {
-      const data = await db.query({
-        type: typeDom.value,
-        brand: brandSelect.value
-      })
-      tbody.innerHTML = ''
-      const fragment = document.createDocumentFragment()
-
-      for (const item of data) {
-        const tr = document.createElement('tr')
-        tr.innerHTML = `
-          <td>${item.id}</td>
-          <td>${item.name}</td>
-          <td>${item.type}</td>
-          <td>${item.brand}</td>
-          <td>${item.price}</td>
-          <td><button class="del-btn" data-id="${item.id}">删除</button></td>
-        `
-        fragment.append(tr)
-      }
-      tbody.append(fragment)
-      $qa('.del-btn')
-        .forEach(btn => {
-          btn.addEventListener('click',async function (){
-            const { dataset: { id } } = this
-            await db.delete(+id)
+            await db.put({
+                type: typeDom2.value,
+                brand: brandInput.value,
+                name: nameInput.value || '商品',
+                price: +priceInput.value,
+            })
             search()
-          })
-        })
-    }
+        }
 
-    addBtn.addEventListener('click', addData)
-    searchBtn.addEventListener('click', search)
+        async function search() {
+            const data = await db.query({
+                type: typeDom.value,
+                brand: brandSelect.value
+            })
+            tbody.innerHTML = ''
+            const fragment = document.createDocumentFragment()
 
-    setSelects(Db.types, typeDom, typeDom2)
-    search()
-  })()
+            for (const item of data) {
+                const tr = document.createElement('tr')
+                tr.innerHTML = `
+                  <td>${item.id}</td>
+                  <td>${item.name}</td>
+                  <td>${item.type}</td>
+                  <td>${item.brand}</td>
+                  <td>${item.price}</td>
+                  <td><button class="del-btn" data-id="${item.id}">删除</button></td>
+                `
+
+                fragment.append(tr)
+            }
+            tbody.append(fragment)
+            $qa('.del-btn')
+                .forEach(btn => {
+                    btn.addEventListener('click', async function () {
+                        const {dataset: {id}} = this
+                        await db.delete(+id)
+                        search()
+                    })
+                })
+        }
+
+        addBtn.addEventListener('click', addData)
+        searchBtn.addEventListener('click', search)
+
+        setSelects(Db.types, typeDom, typeDom2)
+        search()
+    })()
 </script>
 </html>
