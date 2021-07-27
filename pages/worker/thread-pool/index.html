@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+
+</body>
+<script type="module">
+  import ThreadPool from './js/thread-pool.js'
+
+  const threadPool = new ThreadPool(navigator.hardwareConcurrency, './js/worker.js', { type: 'module' })
+  const queue = []
+  const total = 5E7
+  const taskNum = 20
+  //创建个临时缓冲区存储数据
+  const buffer = new ArrayBuffer(4 * total)
+  //创建视图操作缓冲区
+  const view = new Float32Array(buffer)
+  const step = total / taskNum
+
+  //填充缓冲区
+  for (let i = 0; i < total; i++) {
+    view[i] = Math.random()
+  }
+
+  //分多个任务执行
+  for (let i = 0; i < total; i += step) {
+    queue.push(threadPool.enqueue({
+      start: i,
+      end: i + step,
+      buffer
+    }))
+  }
+
+  //等所有任务执行完之后累加在输出
+  Promise.all(queue)
+    .then(data => data.reduce((num, current) => num + current))
+    .then(console.log)
+</script>
+</html>
