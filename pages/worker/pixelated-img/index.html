@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>图片像素化</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    body {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: auto 60px;
+      grid-gap: 10px;
+      padding: 10px;
+    }
+
+    #img-container {
+      border: 1px dashed #c7bbbb;
+      display: flex;
+      flex-wrap: nowrap;
+      align-content: center;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    #img-container img, #pixel-img img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+  </style>
+</head>
+<body>
+<div id="img-container">
+  <img alt="" src="">
+</div>
+<div id="pixel-img">
+</div>
+<label>
+  <span>像素块大小</span>
+  <input id="block-size" max="50" min="1" type="number" value="10">
+</label>
+<button id="create-btn">生成</button>
+</body>
+<script type="module">
+  function $(query) {
+    return document.querySelector(query)
+  }
+
+  function $$(query) {
+    return document.querySelectorAll(query)
+  }
+
+  // alert('拖拽图片到左边虚线框内')
+
+  (function () {
+    const imgContainer = $('#img-container')
+    const pixelImg = $('#pixel-img')
+    const createBtn = $('#create-btn')
+    const sizeInput = $('#block-size')
+    const img = $('#img-container>img')
+    const worker = new Worker('./js/worker.js')
+    let canvas
+    let ctx
+
+    function dragHandler(e) {
+      const {
+        dataTransfer,
+        type
+      } = e
+      e.preventDefault()
+      if (type === 'drop' && dataTransfer.files.length) {
+        img.src = URL.createObjectURL(dataTransfer.files[0])
+        setCanvas()
+      }
+    }
+
+    function setCanvas() {
+      return new Promise(resolve => {
+        const temImg = document.createElement('img')
+        temImg.src = img.src
+        temImg.onload = () => {
+          const {
+            width,
+            height
+          } = img
+          canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, temImg.width, temImg.height, 0, 0, width, height)
+          resolve()
+        }
+      })
+    }
+
+    imgContainer.addEventListener('dragenter', dragHandler)
+    imgContainer.addEventListener('dragover', dragHandler)
+    imgContainer.addEventListener('drop', dragHandler)
+
+    createBtn.addEventListener('click', async () => {
+      if (!ctx) {
+        alert('请先选择图片')
+        return
+      }
+      await setCanvas()
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      worker.postMessage({
+        imgData,
+        size: +sizeInput.value
+      })
+      createBtn.disable = true
+    })
+
+    worker.addEventListener('message', ({ data }) => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.putImageData(data, 0, 0)
+      pixelImg.innerHTML = ''
+      pixelImg.append(canvas)
+      createBtn.disable = false
+    })
+  })()
+</script>
+</html>
