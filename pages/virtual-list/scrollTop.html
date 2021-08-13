@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>虚拟列表-scrollTop方案</title>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-content: center;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #container {
+      position: relative;
+      width: 400px;
+      height: 600px;
+      overflow: hidden auto;
+      border: 1px solid #4ba946;
+    }
+
+    #phantom {
+      width: 100%;
+    }
+
+    #list {
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #list > .item {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-content: center;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 70px;
+    }
+
+    #list > .item + .item {
+      border-top: 1px solid #4ba946;
+    }
+  </style>
+</head>
+<body>
+<div id="container">
+  <div id="phantom"></div>
+  <div id="list">
+
+  </div>
+</div>
+</body>
+<script>
+  /*
+  * 虚拟列表
+  *   参考：https://juejin.cn/post/6844903982742110216#heading-2
+  * - 背景：正常情况下我们会将某个列表的数据全部渲染到页面上，但是假如有几十甚至上百万条数据，
+  *        一次性渲染及其消耗性能并且会让用户等待较长一段时间，这时候虚拟列表就有作用了
+  * - 思路：虚拟列表是一种按需渲染的实现，即只渲染列表高度内的数据，列表高度外的数据不渲染，这种实现的渲染性能很高
+  * - 原理：
+  *   1.利用scroll事件监听
+  *   2.利用scrollTop获得滚动的高度
+  *   3.translateY设置为前面一截隐藏元素的高度可保证要显示的元素一直在可视区域内
+  * - 实现：
+  *   1.监听滚动事件并设置触发计算的条件，计算出当前列表可视区域内显示的数据，然后渲染
+  *   2.数据容器设置为绝对定位，根据当前可是区域内的数据设置容器的translateY
+  * */
+
+  const arr = []
+  for (let i = 0; i < 1000000; i++) {
+    arr.push({
+      id: i,
+      name: `第 ${i} 条`
+    })
+  }
+
+  (function (data) {
+    const documentFragment = document.createDocumentFragment()
+    const list = document.querySelector('#list')
+    const container = document.querySelector('#container')
+    const phantom = document.querySelector('#phantom')
+    const itemHeight = 70
+    let startIndex = 0
+    let endIndex = 0
+    let visibleNum = 0
+    let scrollTop = 0
+    //初始化
+    const init = () => {
+      //初始化
+      phantom.style = `height:${itemHeight * data.length}px;`
+      visibleNum = Math.ceil(list.parentElement.clientHeight / itemHeight)
+      endIndex = visibleNum - 1
+      render()
+    }
+    //渲染
+    const render = () => {
+      //将元素添加到文档片段然后一次性添加到DOM树中要比逐次添加到DOM树中性能要高
+      for (let i = startIndex; i <= endIndex; i++) {
+        const div = document.createElement('div')
+        div.classList.add('item')
+        div.dataset.index = i
+        div.innerText = data[i].name
+        documentFragment.appendChild(div)
+      }
+      list.append(documentFragment)
+    }
+
+    container.addEventListener('scroll', () => {
+      //根据上次垂直滚动的长度和这次垂直滚动的长度，计算出滚动方向，1-向下，2-向上
+      const direction = scrollTop > (scrollTop = container.scrollTop) ? -1 : 1
+      //设定重新计算条件，避免无用渲染
+      if (
+        (direction === 1 && scrollTop > (startIndex + 1) * itemHeight) ||
+        direction === -1 && scrollTop < endIndex * itemHeight
+      ) {
+        startIndex = Math.floor(scrollTop / itemHeight)
+        endIndex = startIndex + visibleNum
+        list.innerHTML = ''
+        list.style.setProperty('transform', `translateY(${startIndex * itemHeight}px)`)
+        render()
+      }
+    })
+
+    init()
+  })(arr)
+</script>
+</html>
