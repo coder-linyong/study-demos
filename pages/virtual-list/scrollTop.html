@@ -77,16 +77,14 @@
   *   1.监听滚动事件并设置触发计算的条件，计算出当前列表可视区域内显示的数据，然后渲染
   *   2.数据容器设置为绝对定位，根据当前可是区域内的数据设置容器的translateY
   * */
-
-  const arr = []
-  for (let i = 0; i < 1000000; i++) {
-    arr.push({
-      id: i,
-      name: `第 ${i} 条`
-    })
-  }
-
-  (function (data) {
+  (function () {
+    const data = []
+    for (let i = 0; i < 1000000; i++) {
+      data.push({
+        id: i,
+        name: `第 ${i} 条`
+      })
+    }
     const documentFragment = document.createDocumentFragment()
     const list = document.querySelector('#list')
     const container = document.querySelector('#container')
@@ -100,18 +98,20 @@
     const init = () => {
       //初始化
       phantom.style = `height:${itemHeight * data.length}px;`
-      visibleNum = Math.ceil(list.parentElement.clientHeight / itemHeight)
+      visibleNum = Math.ceil(container.clientHeight / itemHeight)
       endIndex = visibleNum - 1
       render()
     }
     //渲染
     const render = () => {
+      list.innerHTML = ''
+      list.style.setProperty('transform', `translateY(${startIndex * itemHeight}px)`)
       //将元素添加到文档片段然后一次性添加到DOM树中要比逐次添加到DOM树中性能要高
       for (let i = startIndex; i <= endIndex; i++) {
         const div = document.createElement('div')
         div.classList.add('item')
         div.dataset.index = i
-        div.innerText = data[i].name
+        div.innerText = data[i].namesw
         documentFragment.appendChild(div)
       }
       list.append(documentFragment)
@@ -127,8 +127,6 @@
       ) {
         startIndex = Math.floor(scrollTop / itemHeight)
         endIndex = startIndex + visibleNum
-        list.innerHTML = ''
-        list.style.setProperty('transform', `translateY(${startIndex * itemHeight}px)`)
         render()
       }
     })

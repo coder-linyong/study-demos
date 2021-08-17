@@ -344,367 +344,359 @@
 </div>
 </body>
 <script>
-  const songList = [
-    {
-      name: 'HITA-赤伶',
-      url: './resources/HITA-赤伶.flac'
-    },
-    {
-      name: '小时-同簪',
-      url: './resources/小时-同簪.flac'
-    },
-    {
-      name: '音频怪物-琴师',
-      url: './resources/音频怪物-琴师.flac'
-    },
-    {
-      name: '李常超-长安姑娘',
-      url: './resources/李常超-长安姑娘.flac'
-    },
-    {
-      name: '萧忆情Alex-不谓侠',
-      url: './resources/萧忆情Alex-不谓侠.flac'
-    },
-    {
-      name: '群星-同道殊途',
-      url: './resources/HITA&裂天&三无Marblue&佑可猫&吾恩&Assen捷&Aki阿杰&W.K.&特曼&荷笙&CV图特哈蒙&人衣大人&泠鸢yousa-同道殊途.mp3'
-    },
-    {
-      name: '黄诗扶-人间不值得',
-      url: './resources/黄诗扶-人间不值得.flac'
-    },
-    {
-      name: '河图-如花',
-      url: './resources/河图-如花.flac'
-    },
-  ]
-  const audio = document.querySelector('audio')
-  const playBtn = document.getElementById('play')
-  const listContent = document.getElementById('list-content')
-  const file = document.getElementById('file')
-  const progress = document.getElementById('progress')
-  let timer
-  const popups = [
-    {
-      id: 'speed-btn',
-      fn(ev) {
-        const {
-          target,
-          target: { value }
-        } = ev
-        ev.stopPropagation()
-        audio.playbackRate = value
-        target.parentElement.parentElement.querySelector('span').innerText = value
-      }
-    },
-    {
-      id: 'volume-btn',
-      fn(ev) {
-        const {
-          target,
-          target: { value }
-        } = ev
-        const i = target.parentElement.parentElement.querySelector('i')
-
-        ev.stopPropagation()
-        audio.volume = value
-
-        i.classList.remove('icon-sound-big')
-        i.classList.remove('icon-sound-small')
-        i.classList.remove('icon-mute')
-
-        if (value > .5) {
-          i.classList.add('icon-sound-big')
-        } else if (value > 0) {
-          i.classList.add('icon-sound-small')
-        } else {
-          i.classList.add('icon-mute')
-        }
-      }
-    },
-    {
-      id: 'order-btn',
-      fn(ev) {
-
-      }
-    },
-    {
-      id: 'list-btn',
-      fn(ev) {
-
-      }
-    }
-  ]
-  let changeSong = stepSong
-
-  function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min)
-  }
-
-  function stepSong(num = 1) {
-    const index = songList.findIndex(val => {
-      if (val.url.includes('resources')) {
-        return decodeURI(audio.src)
-          .includes(val.name)
-      }
-      return val.url === audio.src
-    })
-    if (index !== -1) {
-      let song
-      if (num > 0) {
-        song = songList[index + num >= songList.length ? 0 : index + num]
-      } else if (num < 0) {
-        song = songList[index + num < 0 ? songList.length - 1 : index + num]
-      }
-      audio.src = song.url
-      setInfo(song.name)
-    }
-  }
-
-  function setInfo(name) {
-    document.getElementById('audio-message').innerText = name
-    document.getElementById('info').innerText = name
-  }
-
-  function setTime(time, type = 'total') {
-    const minute = parseInt(time / 60)
-    const second = Math.floor(time % 60)
-    document.getElementById(type === 'total' ? 'total-time' : 'real-time').innerText = `${minute < 10 ? '0' : ''}${minute}:${second < 10 ? '0' : ''}${second}`
-  }
-
-  /**
-   * 初始化弹出内容
-   *  1.触发dom添加特定的标记
-   *  2.配置相关内容，通过循环统一处理
-   */
-  function initPopupContent() {
-    const popupInners = document.querySelectorAll('div[popup-inner]')
-    for (let i = 0; i < popups.length; i++) {
-      const popup = popups[i]
-      const inner = popupInners[i]
-      const btn = document.getElementById(popup.id)
-      const range = btn.querySelector('input[type=range]')
-      btn.addEventListener('click', ev => {
-        const { target } = ev
-        ev.stopPropagation()
-        for (let i = 0; i < popupInners.length; i++) {
-          if (btn.contains(popupInners[i])) {
-            popupInners[i].classList.toggle('show')
-            continue
+  (function () {
+    const songList = [
+        {
+          name: 'HITA-赤伶',
+          url: './resources/HITA-赤伶.flac'
+        },
+        {
+          name: '小时-同簪',
+          url: './resources/小时-同簪.flac'
+        },
+        {
+          name: '音频怪物-琴师',
+          url: './resources/音频怪物-琴师.flac'
+        },
+        {
+          name: '李常超-长安姑娘',
+          url: './resources/李常超-长安姑娘.flac'
+        },
+        {
+          name: '萧忆情Alex-不谓侠',
+          url: './resources/萧忆情Alex-不谓侠.flac'
+        },
+        {
+          name: '群星-同道殊途',
+          url: './resources/HITA&裂天&三无Marblue&佑可猫&吾恩&Assen捷&Aki阿杰&W.K.&特曼&荷笙&CV图特哈蒙&人衣大人&泠鸢yousa-同道殊途.mp3'
+        },
+        {
+          name: '黄诗扶-人间不值得',
+          url: './resources/黄诗扶-人间不值得.flac'
+        },
+        {
+          name: '河图-如花',
+          url: './resources/河图-如花.flac'
+        },
+      ],
+      audio = document.querySelector('audio'),
+      playBtn = document.getElementById('play'),
+      listContent = document.getElementById('list-content'),
+      file = document.getElementById('file'),
+      progress = document.getElementById('progress'),
+      popups = [
+        {
+          id: 'speed-btn',
+          fn(ev) {
+            const {
+              target: {value}
+            } = ev
+            ev.stopPropagation()
+            audio.playbackRate = value
+            document.querySelector(`#speed-btn > span`).innerText = value
           }
-          popupInners[i].classList.remove('show')
+        },
+        {
+          id: 'volume-btn',
+          fn(ev) {
+            const {
+              target: {value}
+            } = ev
+            const i = document.querySelector(`#volume-btn > i`)
+
+            ev.stopPropagation()
+            audio.volume = value
+
+            i.classList.remove('icon-sound-big')
+            i.classList.remove('icon-sound-small')
+            i.classList.remove('icon-mute')
+
+            if (value > .5) {
+              i.classList.add('icon-sound-big')
+            } else if (value > 0) {
+              i.classList.add('icon-sound-small')
+            } else {
+              i.classList.add('icon-mute')
+            }
+          }
+        },
+        {
+          id: 'order-btn',
+          fn(ev) {
+
+          }
+        },
+        {
+          id: 'list-btn',
+          fn(ev) {
+
+          }
         }
-      })
-      inner.addEventListener('click', ev => {
-        ev.stopPropagation()
-      })
-      if (range) {
-        range.addEventListener('click', ev => {
-          ev.stopPropagation()
-        })
-        range.addEventListener('input', popup.fn)
-      } else {
-        inner.addEventListener('click', popup.fn)
-      }
+      ]
+    let timer,
+      changeSong = stepSong
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1) + min)
     }
-  }
 
-  //初始化
-  window.addEventListener('load', ev => {
-    const song = songList[0]
-    const orderInner = document.getElementById('order-inner')
-    const orderOptions = [
-      {
-        icon: 'icon-order',
-        text: '顺序播放',
-        fn: stepSong
-      },
-      {
-        icon: 'icon-loop',
-        text: '列表循环',
-        fn: stepSong
-      },
-      {
-        icon: 'icon-random',
-        text: '随机播放',
-        fn() {
-          const song = songList[randomInt(0, songList.length - 1)]
-          setInfo(song.name)
-          audio.src = song.url
+    function stepSong(num = 1) {
+      const index = songList.findIndex(val => {
+        const {url, name} = val
+        const {src} = audio
+        if (url.includes('resources')) {
+          return decodeURI(src)
+            .includes(name)
         }
-      },
-      {
-        icon: 'icon-single',
-        text: '单曲循环',
-        fn() {
-          audio.currentTime = 0
-        }
-      },
-    ]
-    audio.src = `${song.url}`
-    setInfo(song.name)
-
-    //点击不是弹出内容时
-    document.body.addEventListener('click', e => {
-      const { target } = e
-      for (const popup of popups) {
-        const inner = document.querySelector(`#${popup.id} > div`)
-        if (target !== inner && !inner.contains(target)) {
-          inner.classList.remove('show')
-        }
-      }
-    })
-
-    initPopupContent()
-
-    for (const orderOption of orderOptions) {
-      const div = document.createElement('div')
-      const i = document.createElement('i')
-      const span = document.createElement('span')
-
-      i.classList.add('iconfont', orderOption.icon)
-      div.className = 'order-item'
-      span.innerText = orderOption.text
-
-      div.addEventListener('click', ev => {
-        const i = orderInner.parentElement.querySelector('i')
-        changeSong = orderOption.fn
-        orderOptions.forEach(option => i.classList.remove(option.icon))
-        i.setAttribute('title', orderOption.text)
-        i.classList.add(orderOption.icon)
+        return url === src
       })
-
-      div.append(i, span)
-      orderInner.append(div)
-    }
-  })
-
-  //播放暂停
-  playBtn.addEventListener('click', () => {
-    const i = playBtn.querySelector('i')
-    if (audio.paused) {
-      audio.play()
-    } else if (audio.played) {
-      audio.pause()
-    } else {
-      audio.play()
-    }
-  })
-
-  //音频事件
-  audio.addEventListener('canplaythrough', function () {
-    this.play()
-  })
-  audio.addEventListener('canplay', ev => {
-    setTime(audio.duration)
-    progress.max = audio.duration
-
-  })
-  audio.addEventListener('playing', ev => {
-    timer = setInterval(() => {
-      progress.value = audio.currentTime
-      setTime(audio.currentTime, 'real')
-    }, 1000)
-  })
-  audio.addEventListener('play', () => {
-    const i = playBtn.querySelector('i')
-    i.classList.remove('icon-play')
-    i.classList.add('icon-pause')
-  })
-  audio.addEventListener('pause', () => {
-    const i = playBtn.querySelector('i')
-    i.classList.add('icon-play')
-    i.classList.remove('icon-pause')
-    clearInterval(timer)
-  })
-  audio.addEventListener('ended', () => {
-    changeSong()
-  })
-
-  //上一曲下一曲
-  document.getElementById('next')
-    .addEventListener('click', () => {
-      changeSong(1)
-    })
-  document.getElementById('previous')
-    .addEventListener('click', () => {
-      changeSong(-1)
-    })
-
-  // 播放列表
-  function initList() {
-    listContent.innerHTML = ''
-    for (let i = 0; i < songList.length; i++) {
-      const song = songList[i]
-      const div = document.createElement('div')
-      div.classList.add('item')
-      div.innerHTML = `<div>${i + 1}</div><div title="${song.name}">${song.name}</div>`
-      div.addEventListener('click', ev => {
+      if (index !== -1) {
+        let song
+        if (num > 0) {
+          song = songList[index + num >= songList.length ? 0 : index + num]
+        } else if (num < 0) {
+          song = songList[index + num < 0 ? songList.length - 1 : index + num]
+        }
         audio.src = song.url
         setInfo(song.name)
+      }
+    }
+
+    function setInfo(name) {
+      document.getElementById('audio-message').innerText = name
+      document.getElementById('info').innerText = name
+    }
+
+    function setTime(time, type = 'total') {
+      const minute = Math.floor(time / 60),
+        second = Math.floor(time % 60)
+      document.getElementById(type === 'total' ? 'total-time' : 'real-time').innerText = `${minute < 10 ? '0' : ''}${minute}:${second < 10 ? '0' : ''}${second}`
+    }
+
+    /**
+     * 初始化弹出内容
+     *  1.触发dom添加特定的标记
+     *  2.配置相关内容，通过循环统一处理
+     */
+    function initPopupContent() {
+      const popupInners = document.querySelectorAll('div[popup-inner]')
+      for (let i = popups.length - 1; i >= 0; i--) {
+        const popup = popups[i],
+          inner = popupInners[i],
+          btn = document.getElementById(popup.id),
+          range = btn.querySelector('input[type=range]')
+        btn.addEventListener('click', ev => {
+          ev.stopPropagation()
+          for (let i = popupInners.length - 1; i >= 0; i--) {
+            if (btn.contains(popupInners[i])) {
+              popupInners[i].classList.toggle('show')
+              continue
+            }
+            popupInners[i].classList.remove('show')
+          }
+        })
+        inner.addEventListener('click', ev => {
+          ev.stopPropagation()
+        })
+        if (range) {
+          range.addEventListener('click', ev => {
+            ev.stopPropagation()
+          })
+          range.addEventListener('input', popup.fn)
+        } else {
+          inner.addEventListener('click', popup.fn)
+        }
+      }
+    }
+
+    //初始化
+    window.addEventListener('load', () => {
+      const song = songList[0],
+        orderInner = document.getElementById('order-inner'),
+        orderOptions = [
+          {
+            icon: 'icon-order',
+            text: '顺序播放',
+            fn: stepSong
+          },
+          {
+            icon: 'icon-loop',
+            text: '列表循环',
+            fn: stepSong
+          },
+          {
+            icon: 'icon-random',
+            text: '随机播放',
+            fn() {
+              const song = songList[randomInt(0, songList.length - 1)]
+              setInfo(song.name)
+              audio.src = song.url
+            }
+          },
+          {
+            icon: 'icon-single',
+            text: '单曲循环',
+            fn() {
+              audio.currentTime = 0
+            }
+          },
+        ]
+      audio.src = `${song.url}`
+      setInfo(song.name)
+
+      //点击不是弹出内容时
+      document.body.addEventListener('click', ({target}) => {
+        for (const popup of popups) {
+          const inner = document.querySelector(`#${popup.id} > div`)
+          if (target !== inner && !inner.contains(target)) {
+            inner.classList.remove('show')
+          }
+        }
       })
 
-      listContent.append(div)
-    }
-  }
+      initPopupContent()
 
-  //清空播放列表
-  document.getElementById('clear')
-    .addEventListener('click', () => {
-      console.log('clear')
+      for (const orderOption of orderOptions) {
+        const div = document.createElement('div')
+        div.innerHTML = `<i class="iconfont ${orderOption.icon}"></i><div class="order-item">${orderOption.text}</div>`
+
+        div.addEventListener('click', () => {
+          const i = orderInner.parentElement.querySelector('i')
+          changeSong = orderOption.fn
+          orderOptions.forEach(option => i.classList.remove(option.icon))
+          i.setAttribute('title', orderOption.text)
+          i.classList.add(orderOption.icon)
+        })
+
+        orderInner.append(div)
+      }
+    })
+
+    //播放暂停
+    playBtn.addEventListener('click', () => {
+      switch (audio) {
+        case audio.paused:
+          audio.play()
+          break
+        case audio.played:
+          audio.pause()
+          break
+        default:
+          audio.play()
+      }
+    })
+
+    //音频事件
+    audio.addEventListener('canplay', () => {
+      setTime(audio.duration)
+      progress.max = audio.duration
+
+    })
+    audio.addEventListener('playing', () => {
+      timer = setInterval(() => {
+        progress.value = audio.currentTime
+        setTime(audio.currentTime, 'real')
+      }, 1000)
+    })
+    audio.addEventListener('play', () => {
+      const i = playBtn.querySelector('i')
+      i.classList.remove('icon-play')
+      i.classList.add('icon-pause')
+    })
+    audio.addEventListener('pause', () => {
+      const i = playBtn.querySelector('i')
+      i.classList.add('icon-play')
+      i.classList.remove('icon-pause')
+      clearInterval(timer)
+    })
+    audio.addEventListener('ended', () => {
+      changeSong()
+    })
+
+    //上一曲下一曲
+    document.getElementById('next')
+      .addEventListener('click', () => {
+        changeSong(1)
+        audio.play()
+      })
+    document.getElementById('previous')
+      .addEventListener('click', () => {
+        changeSong(-1)
+        audio.play()
+      })
+
+    // 播放列表
+    function initList() {
       listContent.innerHTML = ''
-      songList.length = 0
-      audio.src = ''
+      for (let i = 0; i < songList.length; i++) {
+        const song = songList[i],
+          div = document.createElement('div')
+        div.classList.add('item')
+        div.innerHTML = `<div>${i + 1}</div><div title="${song.name}">${song.name}</div>`
+        div.addEventListener('click', () => {
+          audio.src = song.url
+          setInfo(song.name)
+        })
 
-      initList()
-    })
-  initList()
-
-  //todo 选择文件播放
-
-  function selectFile(files) {
-    console.log(files)
-    const songs = Array.from(files)
-      .filter(file => audio.canPlayType(file.type))
-      .map(file => ({
-        name: file.name,
-        url: URL.createObjectURL(file)
-      }))
-    if (songList.length === 0) {
-      audio.src = songs[0].url
-      setInfo(songs[0].name)
+        listContent.append(div)
+      }
     }
-    songList.push(...songs)
+
+    //清空播放列表
+    document.getElementById('clear')
+      .addEventListener('click', () => {
+        listContent.innerHTML = ''
+        songList.length = 0
+        audio.src = ''
+
+        initList()
+      })
+
     initList()
-  }
 
-  document.getElementById('select-btn')
-    .addEventListener('click', () => {
-      file.click()
-    })
-  file.addEventListener('change', (ev) => {
-    selectFile(ev.target.files)
-  })
-
-  //todo 拖拽文件播放
-  function dropHander(ev) {
-    ev.preventDefault()
-    if (ev.type === 'drop') {
-      selectFile(ev.dataTransfer.files)
-    } else if (ev.type === 'dragenter') {
-
+    // 选择文件播放
+    function selectFile(files) {
+      const songs = Array.from(files)
+        .filter(file => audio.canPlayType(file.type))
+        .map(file => ({
+          name: file.name,
+          url: URL.createObjectURL(file)
+        }))
+      if (songList.length === 0) {
+        audio.src = songs[0].url
+        setInfo(songs[0].name)
+        audio.play()
+      }
+      songList.push(...songs)
+      initList()
     }
-  }
 
-  document.addEventListener('drop', dropHander)
-  document.addEventListener('dragenter', dropHander)
-  document.addEventListener('dragover', dropHander)
-  document.addEventListener('dragleave', dropHander)
+    document.getElementById('select-btn')
+      .addEventListener('click', () => {
+        file.click()
+      })
+    file.addEventListener('change', (ev) => {
+      selectFile(ev.target.files)
+    })
 
-  //播放进度手动调动
-  progress.addEventListener('input', function () {
-    audio.currentTime = this.value
-    setTime(this.value, 'real')
-  })
+    function dropHandler(ev) {
+      ev.preventDefault()
+      if (ev.type === 'drop') {
+        selectFile(ev.dataTransfer.files)
+      } else if (ev.type === 'dragenter') {
+
+      }
+    }
+
+    document.addEventListener('drop', dropHandler)
+    document.addEventListener('dragenter', dropHandler)
+    document.addEventListener('dragover', dropHandler)
+
+    //播放进度手动调动
+    progress.addEventListener('input', function () {
+      audio.currentTime = this.value
+      setTime(this.value, 'real')
+    })
+  })()
 </script>
 </html>

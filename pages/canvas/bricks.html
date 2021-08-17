@@ -13,34 +13,35 @@
     if (!canvas?.getContext ?? true) {
       return false
     }
-    const ctx = canvas.getContext('2d')
-    const height = 20
+    const {width,height}=canvas
+    const ctx = canvas.getContext('2d'),
+      blockHeight = 20
 
     function drawBrick(isHorizontal, startX, startY) {
-      if (startX > canvas.width - height || startY > canvas.height - height) {
+      if (startX > width - blockHeight || startY > height - blockHeight) {
         return false
       }
-      const w = isHorizontal ? height * 2 : height
-      const h = isHorizontal ? height : height * 2
+      const w = isHorizontal ? blockHeight * 2 : blockHeight,
+        h = isHorizontal ? blockHeight : blockHeight * 2
       ctx.fillStyle = `rgba(0,${startX / 2},${startY / 2})`
       ctx.fillRect(startX, startY, w, h)
-      drawBrick(isHorizontal, startX + height, startY + height)
+      drawBrick(isHorizontal, startX + blockHeight, startY + blockHeight)
     }
 
     function drawHorizontal() {
-      for (let i = 0; i < canvas.height; i += height * 4) {
+      for (let i = 0; i < height; i += blockHeight * 4) {
         drawBrick(true, 0, i)
       }
-      for (let i = 0; i < canvas.width; i += height * 4) {
+      for (let i = 0; i < width; i += blockHeight * 4) {
         drawBrick(true, i, 0)
       }
     }
 
     function drawVertical() {
-      for (let i = height; i < canvas.height; i += height * 4) {
+      for (let i = blockHeight; i < height; i += blockHeight * 4) {
         drawBrick(false, 0, i)
       }
-      for (let i = height * 3; i < canvas.width; i += height * 4) {
+      for (let i = blockHeight * 3; i < width; i += blockHeight * 4) {
         drawBrick(false, i, 0)
       }
     }

@@ -2,37 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Title</title>
+  <title>进度条</title>
 </head>
 <body>
 <canvas width="700" height="700">不支持canvas</canvas>
 </body>
 <script>
-  let percentage = 0
-
-  function render() {
+  (function () {
+    let percentage = 0
     const canvas = document.querySelector('canvas')
     if (!canvas?.getContext ?? true) {
       return false
     }
-    const ctx = canvas.getContext('2d')
-    const barWidth = canvas.width * .8
-    const barHeight = 100
-    const color = 'red'
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.rect((canvas.width - barWidth) / 2, 100, barWidth, barHeight)
-    ctx.strokeStyle = color
-    ctx.stroke()
-    ctx.fillStyle = color
-    ctx.fillRect((canvas.width - barWidth) / 2, 100, percentage * barWidth / 100, barHeight)
-    ctx.textAlign = 'center'
-    ctx.font = 'bold 48px serif'
-    ctx.fillText(`${percentage++}%`, canvas.width / 2, 220 + barHeight)
-    if (percentage <= 100) {
-      requestAnimationFrame(render)
-    }
-  }
+    const {width,height}=canvas
+    const ctx = canvas.getContext('2d'),
+      barWidth = width * .8,
+      barHeight = 100,
+      color = 'red',
+      x=(width - barWidth) / 2
 
-  render()
+    function render() {
+      ctx.clearRect(0, 0, width, height)
+      ctx.rect(x, 100, barWidth, barHeight)
+      ctx.strokeStyle = color
+      ctx.stroke()
+      ctx.fillStyle = color
+      ctx.fillRect(x, 100, percentage * barWidth / 100, barHeight)
+      ctx.textAlign = 'center'
+      ctx.font = 'bold 48px serif'
+      ctx.fillText(`${percentage++}%`, width / 2, 220 + barHeight)
+      if (percentage <= 100) {
+        requestAnimationFrame(render)
+      }
+    }
+
+    render()
+  })()
 </script>
 </html>

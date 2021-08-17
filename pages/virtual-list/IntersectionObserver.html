@@ -75,15 +75,14 @@
   *   2.为保证初始渲染时首尾元素都出现在可是区域内，计算可视区域内渲染元素个数应向下取整
   * */
 
-  const arr = []
-  for (let i = 0; i < 1000000; i++) {
-    arr.push({
-      id: i,
-      name: `第 ${i} 条`
-    })
-  }
-
-  (function (data) {
+  (function () {
+    const data = []
+    for (let i = 0; i < 1000000; i++) {
+      data.push({
+        id: i,
+        name: `第 ${i} 条`
+      })
+    }
     const documentFragment = document.createDocumentFragment()
     const list = document.querySelector('#list')
     const container = document.querySelector('#container')
@@ -109,7 +108,7 @@
       //列表总高度，主要作用是滚动条效果
       phantom.style = `height:${itemHeight * data.length}px;`
       //向下取整（方便IntersectionObserver判断跳出条件）
-      visibleNum = Math.floor(list.parentElement.clientHeight / itemHeight)
+      visibleNum = Math.floor(container.clientHeight / itemHeight)
       endIndex = visibleNum - 1
       render()
     }
@@ -130,6 +129,6 @@
     }
 
     init()
-  })(arr)
+  })()
 </script>
 </html>
