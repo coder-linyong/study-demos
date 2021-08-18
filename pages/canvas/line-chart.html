@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <title>折线图</title>
   <style>
-    html, body {
-      width: 100%;
-      height: 100%;
-      background: #000;
-      overflow: hidden;
-      padding: 0;
-      margin: 0;
-    }
+      html, body {
+          width: 100%;
+          height: 100%;
+          background: #000;
+          overflow: hidden;
+          padding: 0;
+          margin: 0;
+      }
   </style>
 </head>
 <body>
@@ -26,159 +26,164 @@
      4. 折线和区域都是用Path2D，方便下次从新设置数据时从画布清空
    */
 
-  function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min)
-  }
-
-  class LineChart {
-    static padding = 40
-    #index = 0
-
-    constructor(data, ctx, option = {
-      showGrid: false,
-      gridColor: '#6d6b6b'
-    }) {
-      this.data = data
-      this.option = option
-      this.setParameter()
-    }
-
-    setParameter() {
-      const {
-        data,
-        option,
-      } = this
-      const {
-        clientWidth,
-        clientHeight
-      } = document.body
-      this.xStep = (clientWidth - LineChart.padding * 2) / (data.length - 1)
-      this.yStep = (clientHeight - LineChart.padding * 2) / (Math.max(...data) + randomInt(5, 10))
-      if (option.showGrid) {
-        this.gridImageData = LineChart.getGridImageData(ctx, this.xStep, this.yStep)
-      }
-      this.posArr = LineChart.getLinePosArr(data, this.xStep, this.yStep)
-    }
-
-    draw(ctx) {
-      const {
-        posArr,
-        gridImageData
-      } = this
-      const { padding } = LineChart
-      const {
-        clientHeight,
-        clientWidth
-      } = document.body
-      if (this.#index < posArr.length) {
-        ctx.clearRect(0, 0, clientWidth, clientHeight)
-
-        const startPos = posArr[0]
-        const endPos = posArr[this.#index]
-        const areaPath = new Path2D()
-        const linePath = new Path2D()
-
-        gridImageData && ctx.putImageData(gridImageData, 0, 0)
-        areaPath.lineTo(startPos.x, startPos.y)
-        linePath.moveTo(startPos.x, startPos.y)
-
-        for (let i = 1; i < this.#index; i++) {
-          const pos = posArr[i]
-          if (pos.real) {
-            linePath.lineTo(pos.x, pos.y)
-            areaPath.lineTo(pos.x, pos.y)
-          }
-        }
-        this.#index++
-
-        areaPath.lineTo(endPos.x, endPos.y)
-        areaPath.lineTo(endPos.x, clientHeight - padding)
-        areaPath.lineTo(startPos.x, clientHeight - padding)
-        areaPath.closePath()
-        linePath.lineTo(endPos.x, endPos.y)
-        ctx.fill(areaPath)
-        ctx.stroke(linePath)
-        return true
-      }
-    }
-
-    static getLinePosArr(data, xStep, yStep) {
-      const { padding } = this
-      const {
-        clientHeight
-      } = document.body
-      const posData = data.map((v, i) => ({
-        x: padding + i * xStep,
-        y: clientHeight - padding - v * yStep
-      }))
-      const posArr = []
-      for (let i = 1; i < posData.length; i++) {
-        const start = posData[i - 1]
-        const end = posData[i]
-        posArr.push(...this.getStepPosArr(start.x, start.y, end.x, end.y))
-      }
-      return posArr
-    }
-
-    setData(data) {
-      this.data = data
-      this.#index = 0
-      this.setParameter()
-    }
-
-    static getGridImageData(ctx, xStep, yStep, color = '#6d6b6b') {
-      const { padding } = LineChart
-      const W = document.body.clientWidth
-      const H = document.body.clientHeight
-      const gridPath = new Path2D()
-      for (let x = padding; x <= W - padding + 1; x += xStep) {
-        gridPath.moveTo(x, padding)
-        gridPath.lineTo(x, H - padding)
-        gridPath.closePath()
-      }
-
-      for (let y = padding; y <= H - padding + 1; y += yStep) {
-        gridPath.moveTo(padding, y)
-        gridPath.lineTo(W - padding, y)
-        gridPath.closePath()
-      }
-      ctx.strokeStyle = color
-      ctx.lineWidth = 1
-      ctx.stroke(gridPath)
-
-      const imgData = ctx.getImageData(0, 0, W, H)
-      ctx.clearRect(0, 0, W, H)
-      return imgData
-    }
-
-    static getStepPosArr(startX, startY, endX, endY) {
-      const num = 20
-      const posArr = []
-      const xStep = (endX - startX) / num
-      const yStep = (startY - endY) / num
-      for (let i = 0; i <= num; i++) {
-        posArr.push({
-          real: i === 0 || i === num,
-          x: startX + i * xStep,
-          y: startY - i * yStep
-        })
-      }
-      return posArr
-    }
-  }
-
   (function () {
+    const {clientHeight, clientWidth} = document.body
+
+    function randomInt(min, max) {
+      return ~~(Math.random() * (max - min + 1) + min)
+    }
+
+    class LineChart {
+      static padding = 40
+      #index = 0
+
+      constructor(data, ctx, option = {
+        showGrid: false,
+        gridColor: '#6d6b6b'
+      }) {
+        this.data = data
+        this.option = option
+        this.setParameter()
+      }
+
+      setParameter() {
+        const {
+            data,
+            option,
+          } = this,
+          {padding} = LineChart
+        this.xStep = (clientWidth - padding * 2) / (data.length - 1)
+        this.yStep = (clientHeight - padding * 2) / (Math.max(...data) + randomInt(5, 10))
+        if (option.showGrid) {
+          this.gridImageData = LineChart.getGridImageData(ctx, this.xStep, this.yStep)
+        }
+        this.posArr = LineChart.getLinePosArr(data, this.xStep, this.yStep)
+      }
+
+      draw(ctx) {
+        const {
+            posArr,
+            gridImageData
+          } = this,
+          {padding} = LineChart,
+          index = this.#index
+        if (index < posArr.length) {
+          ctx.clearRect(0, 0, clientWidth, clientHeight)
+
+          const startPos = posArr[0],
+            endPos = posArr[index],
+            areaPath = new Path2D(),
+            linePath = new Path2D()
+
+          gridImageData && ctx.putImageData(gridImageData, 0, 0)
+          areaPath.lineTo(startPos.x, startPos.y)
+          linePath.moveTo(startPos.x, startPos.y)
+
+          let i = 1
+          do {
+            const pos = posArr[i++]
+            if (pos.real) {
+              const {x, y} = pos
+              linePath.lineTo(x, y)
+              areaPath.lineTo(x, y)
+            }
+          } while (i < index)
+          this.#index++
+
+          areaPath.lineTo(endPos.x, endPos.y)
+          areaPath.lineTo(endPos.x, clientHeight - padding)
+          areaPath.lineTo(startPos.x, clientHeight - padding)
+          areaPath.closePath()
+          linePath.lineTo(endPos.x, endPos.y)
+          ctx.fill(areaPath)
+          ctx.stroke(linePath)
+          return true
+        }
+      }
+
+      static getLinePosArr(data, xStep, yStep) {
+        const {padding} = this,
+          posData = data.map((v, i) => ({
+            x: padding + i * xStep,
+            y: clientHeight - padding - v * yStep
+          })),
+          posArr = [],
+          length = posData.length
+        let i = 1
+        do {
+          const start = posData[i - 1],
+            end = posData[i++]
+          posArr.push(...this.getStepPosArr(start.x, start.y, end.x, end.y))
+        } while (i < length)
+        return posArr
+      }
+
+      /*      /!**
+             * 设置新数据
+             * @param data 数字数组
+             *!/
+            setData(data) {
+              this.data = data
+              this.#index = 0
+              this.setParameter()
+            }*/
+
+      static getGridImageData(ctx, xStep, yStep, color = '#6d6b6b') {
+        const {padding} = LineChart,
+          W = clientWidth,
+          H = clientHeight,
+          gridPath = new Path2D()
+        let x = padding, y = padding
+
+        do {
+          gridPath.moveTo(x, padding)
+          gridPath.lineTo(x, H - padding)
+          gridPath.closePath()
+          x += xStep
+        } while (x <= W - padding + 1)
+        do {
+          gridPath.moveTo(padding, y)
+          gridPath.lineTo(W - padding, y)
+          gridPath.closePath()
+          y += yStep
+        } while (y <= H - padding + 1)
+
+        ctx.strokeStyle = color
+        ctx.lineWidth = 1
+        ctx.stroke(gridPath)
+
+        const imgData = ctx.getImageData(0, 0, W, H)
+        ctx.clearRect(0, 0, W, H)
+        return imgData
+      }
+
+      static getStepPosArr(startX, startY, endX, endY) {
+        const num = 20,
+          posArr = [],
+          xStep = (endX - startX) / num,
+          yStep = (startY - endY) / num
+        let i = 0
+        do {
+          posArr.push({
+            real: i === 0 || i === num,
+            x: startX + i * xStep,
+            y: startY - i++ * yStep
+          })
+        } while (i <= num)
+        return posArr
+      }
+    }
+
     const canvas = document.querySelector('canvas')
     if (!canvas?.getContext ?? true) return
-    const { padding } = LineChart
-    const ctx = canvas.getContext('2d')
-    const W = canvas.width = document.body.clientWidth
-    const H = canvas.height = document.body.clientHeight
-    const data = [10, 30, 45, 45, 45, 48, 48, 18, 44, 54, 39, 25, 20]
-    const lineChart = new LineChart(data, ctx)
-
-    const lineGradient = ctx.createLinearGradient(padding, H / 2 - padding, W - padding, H / 2 - padding)
-    const areaGradient = ctx.createLinearGradient(W / 2 - padding, padding, W / 2 - padding, H - padding)
+    const {padding} = LineChart,
+      ctx = canvas.getContext('2d'),
+      W = canvas.width = clientWidth,
+      H = canvas.height = clientHeight,
+      data = [10, 30, 45, 45, 45, 48, 48, 18, 44, 54, 39, 25, 20],
+      lineChart = new LineChart(data, ctx),
+      lineGradient = ctx.createLinearGradient(padding, H / 2 - padding, W - padding, H / 2 - padding),
+      areaGradient = ctx.createLinearGradient(W / 2 - padding, padding, W / 2 - padding, H - padding)
     lineGradient.addColorStop(0, '#6b36c4')
     lineGradient.addColorStop(0.5, '#2c56a1')
     lineGradient.addColorStop(1, '#2735e7')

@@ -31,39 +31,41 @@
   *     点击位置判断是否在数组中某个路径下（倒序遍历），改变该路径的位置，然后重新绘制
   * */
 
-  class Polygon {
-    constructor(sidesNum, x, y, radius) {
-      this.sidesNum = sidesNum
-      this.x = x
-      this.y = y
-      this.radius = radius
-    }
-
-    draw(ctx, borderColor = '#000',) {
-      this.path = new Path2D()
-      const radianStep = Math.PI * 2 / this.sidesNum
-
-      for (let i = 0; i <= Math.PI * 2; i += radianStep) {
-        this.path.lineTo(this.x + this.radius * Math.cos(i), this.y + this.radius * Math.sin(i))
-      }
-      this.path.closePath()
-      ctx.strokeStyle = borderColor
-      ctx.stroke(this.path)
-    }
-  }
-
   (function () {
+    class Polygon {
+      constructor(sidesNum, x, y, radius) {
+        this.sidesNum = sidesNum
+        this.x = x
+        this.y = y
+        this.radius = radius
+      }
+
+      draw(ctx, borderColor = '#000',) {
+        const {PI}=Math
+        this.path = new Path2D()
+        const radianStep = PI * 2 / this.sidesNum
+
+        for (let i = 0,max=PI*2; i <= max; i += radianStep) {
+          this.path.lineTo(this.x + this.radius * Math.cos(i), this.y + this.radius * Math.sin(i))
+        }
+        this.path.closePath()
+        ctx.strokeStyle = borderColor
+        ctx.stroke(this.path)
+      }
+    }
+
     const canvas = document.querySelector('canvas')
     if (!canvas.getContext ?? true) return
-    const ctx = canvas.getContext('2d')
-    const sidesNumInput = document.getElementById('sidesNum')
-    const draggableDom = document.getElementById('draggable')
-    const polygons = []
-    let imgData
-    let startX
-    let startY
-    let editingPolygon = null
-    let dragPolygon = null
+    const ctx = canvas.getContext('2d'),
+      sidesNumInput = document.getElementById('sidesNum'),
+      draggableDom = document.getElementById('draggable'),
+      polygons = []
+    const {width, height} = canvas
+    let imgData,
+      startX,
+      startY,
+      editingPolygon = null,
+      dragPolygon = null
 
     /**
      * 获取鼠标在canvas的位置
@@ -73,10 +75,10 @@
      * @returns {{x: number, y: number}}
      */
     function getMousePos(canvas, clientX, clientY) {
-      const rect = canvas.getBoundingClientRect()
+      const {x, y} = canvas.getBoundingClientRect()
       return {
-        x: clientX - rect.x,
-        y: clientY - rect.y,
+        x: clientX - x,
+        y: clientY - y,
       }
     }
 
@@ -91,40 +93,40 @@
           2.鼠标移动时改变选中多边形的中心点，清空画布，将所有多边形重新绘制
           3.鼠标弹起释放选中的多边形
      */
-    canvas.addEventListener('mousedown', ev => {
-      const pos = getMousePos(canvas, ev.clientX, ev.clientY)
+    canvas.addEventListener('mousedown', ({clientX, clientY}) => {
+      const {x, y} = getMousePos(canvas, clientX, clientY)
       if (draggableDom.checked && polygons.length) {
         for (let i = polygons.length - 1; i >= 0; i--) {
           const p = polygons[i]
-          if (p && ctx.isPointInPath(p.path, pos.x, pos.y)) {
+          if (p && ctx.isPointInPath(p.path, x, y)) {
             dragPolygon = p
             break
           }
         }
       } else {
-        imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-        startX = pos.x
-        startY = pos.y
+        imgData = ctx.getImageData(0, 0, width, height)
+        startX = x
+        startY = y
       }
     })
-    canvas.addEventListener('mousemove', ev => {
-      const pos = getMousePos(canvas, ev.clientX, ev.clientY)
+    canvas.addEventListener('mousemove', ({clientX, clientY, movementX, movementY}) => {
+      const {x, y} = getMousePos(canvas, clientX, clientY)
       if (dragPolygon) {
-        dragPolygon.x += ev.movementX
-        dragPolygon.y += ev.movementY
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        dragPolygon.x += movementX
+        dragPolygon.y += movementY
+        ctx.clearRect(0, 0, width, height)
         polygons.map(p => {
           p.draw(ctx)
         })
       } else if (imgData) {
         const sidesNum = sidesNumInput.value
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.clearRect(0, 0, width, height)
         ctx.putImageData(imgData, 0, 0)
-        editingPolygon = new Polygon(sidesNum, startX, startY, Math.hypot(startX - pos.x, startY - pos.y))
+        editingPolygon = new Polygon(sidesNum, startX, startY, Math.hypot(startX - x, startY - y))
         editingPolygon.draw(ctx)
       }
     })
-    canvas.addEventListener('mouseup', ev => {
+    canvas.addEventListener('mouseup', () => {
       if (dragPolygon) {
         dragPolygon = null
       } else if (imgData) {

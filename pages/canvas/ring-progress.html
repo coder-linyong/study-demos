@@ -11,7 +11,7 @@
   (function () {
     let num = -90
 
-    function render(a) {
+    function render() {
       const canvas = document.getElementById('canvas')
       if (!canvas?.getContext ?? true) {
         return false
@@ -32,11 +32,6 @@
         ctx.textAlign = 'center'
         ctx.font = 'bold 24px serif'
         ctx.fillText(`${((num + 90) * 100 / 360).toFixed(1)}%`, x, y + ctx.measureText(`${num}`).fontBoundingBoxDescent * 2)
-
-        ctx.shadowColor = '#b6afaf'
-        ctx.shadowBlur = 10
-        ctx.shadowOffsetY = 2
-        ctx.shadowOffsetX = 2
       }
 
       drawRing('#d77c7c', 100, 100, -0.5 * Math.PI, num * Math.PI / 180)

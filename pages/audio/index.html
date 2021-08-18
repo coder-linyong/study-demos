@@ -437,7 +437,7 @@
       changeSong = stepSong
 
     function randomInt(min, max) {
-      return Math.floor(Math.random() * (max - min + 1) + min)
+      return ~~(Math.random() * (max - min + 1) + min)
     }
 
     function stepSong(num = 1) {
@@ -468,8 +468,8 @@
     }
 
     function setTime(time, type = 'total') {
-      const minute = Math.floor(time / 60),
-        second = Math.floor(time % 60)
+      const minute = ~~(time / 60),
+        second = ~~(time % 60)
       document.getElementById(type === 'total' ? 'total-time' : 'real-time').innerText = `${minute < 10 ? '0' : ''}${minute}:${second < 10 ? '0' : ''}${second}`
     }
 

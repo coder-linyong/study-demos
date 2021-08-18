@@ -30,14 +30,10 @@
 <script>
 
   (function () {
-    //  绘制 https://www.bilibili.com/video/av38339350/
-    //  动画 https://www.bilibili.com/video/av78247451/
     const canvas = document.querySelector('canvas')
     if (!canvas.getContext ?? true) return
     const ctx = canvas.getContext('2d')
     const worker = new Worker('js/snow-worker2.js')
-    let x = 0
-    let y = 0
     canvas.width = document.body.clientWidth
     canvas.height = document.body.clientHeight
     ctx.fillStyle = '#fff'

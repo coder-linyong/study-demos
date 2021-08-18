@@ -23,13 +23,13 @@
       return false
     }
     const ctx = canvas.getContext('2d')
-    let x = 150
-    let y = 50
-    let drag = false
+    let x = 150,
+      y = 50,
+      drag = false
 
     function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
       const path = new Path2D()
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
       path.rect(10, 10, 100, 100)
       path.rect(200, 200, 100, 100)
       ctx.fillStyle = '#3cdb4f'
@@ -74,9 +74,9 @@
     const eventNames = ['click', 'mousedown', 'mouseup', 'mousemove']
     eventNames.forEach(eventName => {
       canvas.addEventListener(eventName, ev => {
-        const domRect = canvas.getBoundingClientRect()
-        const pointX = ev.clientX - domRect.x
-        const pointY = ev.clientY - domRect.y
+        const domRect = canvas.getBoundingClientRect(),
+          pointX = ev.clientX - domRect.x,
+          pointY = ev.clientY - domRect.y
         for (const data of pathArr) {
           data[eventName] && (eventName === 'click' ? data[eventName](pointX, pointY) : data[eventName](ev, pointX, pointY))
         }
