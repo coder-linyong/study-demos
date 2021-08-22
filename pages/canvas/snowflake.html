@@ -28,43 +28,25 @@
 <canvas></canvas>
 </body>
 <script>
-
   (function () {
     const canvas = document.querySelector('canvas')
     if (!canvas.getContext ?? true) return
-    const ctx = canvas.getContext('2d')
-    const worker = new Worker('js/snow-worker2.js')
-    canvas.width = document.body.clientWidth
-    canvas.height = document.body.clientHeight
+    const ctx = canvas.getContext('2d'),
+      worker = new Worker('js/snow-worker2.js'),
+      width = canvas.width = document.body.clientWidth,
+      height = canvas.height = document.body.clientHeight
     ctx.fillStyle = '#fff'
     ctx.strokeStyle = '#fff'
 
     worker.postMessage({
-      type: 'init',
-      data: {
-        width: document.body.clientWidth,
-        height: document.body.clientHeight
-      }
+      width,
+      height
     })
-    worker.onerror = e => {
-      console.log(e)
-    }
-    worker.onmessage = e => {
-      const data = e.data
-      if (data.type === 'frame') {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.drawImage(data.data.imageBitmap, 0, 0)
-      }
-    }
 
-    // function render() {
-    //   ctx.drawImage(outCanvas, 0, 0)
-    //   generateNextFrame()
-    //
-    //   requestAnimationFrame(render)
-    // }
-
-    // render()
+    worker.onmessage = ({data}) => {
+      ctx.clearRect(0,0,width,height)
+      ctx.drawImage(data, 0, 0)
+    }
   })()
 </script>
 </html>

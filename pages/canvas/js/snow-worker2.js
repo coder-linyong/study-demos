@@ -7,16 +7,16 @@
   下降超出屏幕范围删除或者重新设定位置
 * */
 
-function randomFloat (min, max) {
+function randomFloat(min, max) {
   return Math.random() * (max - min) + min
 }
 
-function randomInt (min, max) {
+function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
 class Shape {
-  constructor (x, y) {
+  constructor(x, y) {
     this.x = x
     this.y = y
   }
@@ -26,13 +26,13 @@ class Shape {
  * 多边形类
  */
 class Polygon extends Shape {
-  constructor (x, y, radius, borderNum = randomInt(4, 10)) {
+  constructor(x, y, radius, borderNum = randomInt(4, 10)) {
     super(x, y)
     this.radius = radius
     this.borderNum = borderNum
   }
 
-  draw (radian, path, color = '#fff') {
+  draw(radian, path, color = '#fff') {
     const {
       radius,
       borderNum,
@@ -41,9 +41,9 @@ class Polygon extends Shape {
     } = this
     const step = Math.PI * 2 / borderNum
     for (let i = 0; i <= borderNum; i++) {
-      const ra = radian + Math.PI + i * step
-      const posX = x + radius * Math.cos(ra)
-      const posY = y + radius * Math.sin(ra)
+      const ra = radian + Math.PI + i * step,
+        posX = x + radius * Math.cos(ra),
+        posY = y + radius * Math.sin(ra)
       path.lineTo(posX, posY)
     }
     path.closePath()
@@ -54,26 +54,26 @@ class Polygon extends Shape {
  * 方块
  */
 class Cube extends Shape {
-  constructor (x, y, width, height) {
+  constructor(x, y, width, height) {
     super(x, y)
     this.width = width
     this.height = height
   }
 
-  draw (radian, path) {
+  draw(radian, path) {
     const {
       x,
       y,
       width,
       height
     } = this
-    const r = height / 2
-    const ra1 = -Math.PI / 2 + radian
-    const ra2 = Math.PI / 2 + radian
-    const x1 = x + Math.cos(ra1) * r
-    const y1 = y + Math.sin(ra1) * r
-    const x2 = x + Math.cos(ra2) * r
-    const y2 = y + Math.sin(ra2) * r
+    const r = height / 2,
+      ra1 = -Math.PI / 2 + radian,
+      ra2 = Math.PI / 2 + radian,
+      x1 = x + Math.cos(ra1) * r,
+      y1 = y + Math.sin(ra1) * r,
+      x2 = x + Math.cos(ra2) * r,
+      y2 = y + Math.sin(ra2) * r
     path.moveTo(x1, y1)
     path.lineTo(x2, y2)
     path.lineTo(x2 + Math.cos(radian) * width, y2 + Math.sin(radian) * width)
@@ -92,7 +92,7 @@ class Hammer extends Shape {
    * @param level 层级
    * @param borderNum 边数
    */
-  constructor (x, y, width, height, level = 1, radian = 0, borderNum = randomInt(3, 12)) {
+  constructor(x, y, width, height, level = 1, radian = 0, borderNum = randomInt(3, 12)) {
     super(x, y)
     this.width = width
     this.height = height
@@ -108,19 +108,19 @@ class Hammer extends Shape {
 
     const hammers = this.hammers = []
     if (Math.random() > level * 0.3) {
-      for (let i = 0; i < randomInt(1, 7); i++) {
-        const posX = x + randomFloat(0, width * 0.8)
-        const radian = randomFloat(-Math.PI / 2, Math.PI / 2)
-        const w = randomFloat(width * 0.2, width * 0.4)
-        const h = randomFloat(height * 0.2, height * 0.4)
-        const hammer = new Hammer(posX, y, w, h, level + 1, radian)
+      for (let i = 0; i < randomInt(1, 4); i++) {
+        const posX = x + randomFloat(0, width * 0.8),
+          radian = randomFloat(-Math.PI / 2, Math.PI / 2),
+          w = randomFloat(width * 0.2, width * 0.4),
+          h = randomFloat(height * 0.2, height * 0.4),
+          hammer = new Hammer(posX, y, w, h, level + 1, radian)
         hammer.posX = posX - x
         hammers.push(hammer)
       }
     }
   }
 
-  draw (radian = randomFloat(-Math.PI / 2, Math.PI / 2), path) {
+  draw(radian = randomFloat(-Math.PI / 2, Math.PI / 2), path) {
     const {
       shapes,
       hammers
@@ -135,7 +135,7 @@ class Hammer extends Shape {
     })
   }
 
-  setShapesPos (radian) {
+  setShapesPos(radian) {
     const {
       x,
       y,
@@ -167,7 +167,7 @@ class Snowflake extends Polygon {
    * @param radius 半径
    * @param borderNum 边数量
    */
-  constructor (x, y, radius, borderNum = randomInt(4, 10)) {
+  constructor(x, y, radius, borderNum = randomInt(3, 8)) {
     super(x, y, radius, borderNum)
     this.rotateRadian = 0
     this.setRandomParams()
@@ -176,40 +176,40 @@ class Snowflake extends Polygon {
     this.hammer = new Hammer(x, y, radius, randomFloat(radius * 0.05, radius * 0.1))
   }
 
-  setRandomParams () {
-    const { radius } = this
-    const amplitude = this.amplitude = radius * randomFloat(0.08, 0.15)// 振幅
-    const cycle = this.cycle = 1 / radius / randomFloat(0.09, 0.8)// 周期
+  setRandomParams() {
+    const {radius} = this,
+      amplitude = this.amplitude = radius * randomFloat(0.1, 0.25),// 振幅
+      cycle = this.cycle = 1 / radius / randomFloat(0.15, 0.8)// 周期
     this.speed = Math.random() * Math.random() * Math.random() * radius * amplitude * cycle
-    this.yOffset = randomFloat(0, 2)
+    this.yOffset = randomFloat(0.5, 3)
     this.rotateRadianOffset = randomFloat(-Math.PI / 180, Math.PI / 180) * radius * 0.1
   }
 
-  draw (path, color = '#fff') {
+  draw(path, color = '#fff') {
     const {
-      hammer,
-      rotateRadian,
-      borderNum
-    } = this
-    const step = Math.PI * 2 / borderNum
+        hammer,
+        rotateRadian,
+        borderNum
+      } = this,
+      step = Math.PI * 2 / borderNum
 
     for (let i = 0; i < borderNum; i++) {
       hammer.draw(rotateRadian + i * step, path)
     }
   }
 
-  falling (maxWidth, maxHeight) {
+  falling(maxWidth, maxHeight) {
     const {
-      yOffset,
-      amplitude,
-      cycle,
-      radius,
-      hammer,
-      rotateRadianOffset,
-      speed
-    } = this
-    const y = this.y += yOffset
-    this.x += amplitude * Math.sin(y * cycle + speed)
+        yOffset,
+        amplitude,
+        cycle,
+        radius,
+        hammer,
+        rotateRadianOffset,
+        speed
+      } = this,
+      y = this.y += yOffset
+    this.x += Math.floor(amplitude * Math.sin(y * cycle + speed))
     this.rotateRadian += rotateRadianOffset
 
     if (this.y > maxHeight + radius * 2) {
@@ -222,7 +222,7 @@ class Snowflake extends Polygon {
     hammer.y = this.y
   }
 
-  inScreen (w, h) {
+  inScreen(w, h) {
     const {
       x,
       radius,
@@ -232,12 +232,35 @@ class Snowflake extends Polygon {
   }
 }
 
-let i = 0
+let i = 0,
+  outCanvas,
+  outCtx
 const snowflakes = []
-let outCanvas
-let outCtx
 
-function init (width, height) {
+function render() {
+  const w = outCanvas.width,
+    h = outCanvas.height,
+    path = new Path2D(),
+    {length} = snowflakes
+  let j = length - 1
+  outCtx.clearRect(0, 0, w, h)
+  snowflakes.sort((s1, s2) => s1.radius - s2.radius)
+  console.time('while')
+  do {
+    const snowflake = snowflakes[j--]
+    snowflake.inScreen(w, h) && snowflake.draw(path)
+    snowflake.falling(w, h)
+  } while (j >= 0)
+  console.timeEnd('while')
+  outCtx.fill(path)
+  if (i++ % 10 === 0 && length < 140) {
+    snowflakes.push(new Snowflake(randomInt(0, w), 0, randomInt(3, 30), randomInt(6, 12)))
+  }
+  postMessage(outCanvas.transferToImageBitmap())
+  requestAnimationFrame(render)
+}
+
+function init(width, height) {
   outCanvas = new OffscreenCanvas(width, height)
   outCtx = outCanvas.getContext('2d')
 
@@ -254,34 +277,6 @@ function init (width, height) {
   render()
 }
 
-function render () {
-  const w = outCanvas.width
-  const h = outCanvas.height
-  const path = new Path2D()
-  outCtx.clearRect(0, 0, w, h)
-  snowflakes.sort((s1, s2) => s1.radius - s2.radius)
-  for (let j = 0; j < snowflakes.length; j++) {
-    const snowflake = snowflakes[j]
-    snowflake.inScreen(w, h) && snowflake.draw(path)
-    snowflake.falling(w, h)
-  }
-  outCtx.fill(path)
-  if (i++ % 10 === 0 && snowflakes.length < 140) {
-    const snowflake = new Snowflake(randomInt(0, w), 0, randomInt(3, 30), randomInt(6, 12))
-    snowflakes.push(snowflake)
-  }
-  self.postMessage({
-    type: 'frame',
-    data: {
-      imageBitmap: outCanvas.transferToImageBitmap()
-    }
-  })
-  requestAnimationFrame(render)
-}
-
-self.addEventListener('message', e => {
-  const data = e.data
-  if (data.type === 'init') {
-    init(data.data.width, data.data.height)
-  }
+addEventListener('message', ({data: {width, height}}) => {
+  init(width, height)
 })

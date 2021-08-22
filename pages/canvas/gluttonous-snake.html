@@ -58,7 +58,7 @@
 
 
     function randomInt(min, max) {
-      return ~~(Math.random() * (max - min + 1) + min)
+      return Math.floor(Math.random() * (max - min + 1) + min)
     }
 
     class Part {
@@ -176,8 +176,8 @@
     if (!canvas?.getContext ?? true) return
     const ctx = canvas.getContext('2d'),
       gridSize = 50,
-      maxX = ~~(document.body.clientWidth / gridSize),
-      maxY = ~~(document.body.clientHeight / gridSize),
+      maxX = Math.floor(document.body.clientWidth / gridSize),
+      maxY = Math.floor(document.body.clientHeight / gridSize),
       W = canvas.width = maxX * gridSize,
       H = canvas.height = maxY * gridSize,
       snake = new Snake(maxX, maxY),

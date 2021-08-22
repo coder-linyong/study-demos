@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <title>时间动画</title>
   <style>
-      html, body {
-          width: 100%;
-          height: 100%;
-          background: #000;
-          overflow: hidden;
-      }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      transform: scale(1);
+    }
   </style>
 </head>
 <body>
@@ -29,6 +30,10 @@
         3.生成最大像素点点数（88:88:88所需要的像素点数比较多）
         4.初始渲染时将各粒子点位打断，然后获取时间文本点位，设置点位运动终点为像素点位
         5.每一帧动画由开始点位往终点点位移动一段距离
+
+       优化：
+        1.getImageData()方法非常耗时，在较大屏幕中如果取全屏像素数据极其耗时，
+          可获取文字绘制区域，只获取和操作那个区域的像素数据要比较省资源。
      */
     Array.prototype.shuffle = function () {
       const arr = this
@@ -47,7 +52,7 @@
     }
 
     function randomInt(min, max) {
-      return ~~(Math.random() * (max - min + 1) + min)
+      return Math.floor(Math.random() * (max - min + 1) + min)
     }
 
     //生成亮色
@@ -96,8 +101,8 @@
           speedY
         } = this
         if (startX !== x || startY !== y) {
-          this.startY = ~~(startY) === y ? y : startY - speedY
-          this.startX = ~~(startX) === x ? x : startX - speedX
+          this.startY = Math.floor(startY) === y ? y : startY - speedY
+          this.startX = Math.floor(startX) === x ? x : startX - speedX
         }
       }
 
@@ -120,11 +125,22 @@
     const W = canvas.width = clientWidth,
       H = canvas.height = clientHeight,
       particleNum = 500,
-      ctx = canvas.getContext('2d'),
+      ctx = canvas.getContext('2d', {alpha: true}),
       particles = []
+    let START_X,//取数据区域x轴开始位置
+      END_X,//取数据区域x轴结束位置
+      START_Y,//取数据区域Y轴开始位置
+      END_Y,//取数据区域Y轴结束位置
+      selectWidth,//取数据区域宽度
+      selectHeight//取数据区域高度
+
+    ctx.fillStyle = 'red'
+    ctx.font = '300px Avenir'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
 
     /**
-     * 根据ImageData获取字的像素坐标，每隔12个像素取一个
+     * 根据ImageData获取字的像素坐标，每隔15个像素取一个
      * @returns {[]} 返回{x,y}格式的坐标对象
      */
     function getTextPosArr() {
@@ -139,35 +155,21 @@
       seconds = seconds > 9 ? seconds : `0${seconds}`
 
       ctx.clearRect(0, 0, W, H)
-      ctx.fillStyle = 'red'
-      ctx.font = '300px Avenir'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
       ctx.fillText(`${hour}:${minutes}:${seconds}`, W / 2, H / 2)
 
-      imgData = ctx.getImageData(0, 0, W, H).data
-      for (let j = 0; j < W; j += step) {
-        for (let i = 0; i < H; i += step) {
-          if (imgData[(i * W + j) * 4] > 0) {
+      imgData = ctx.getImageData(START_X, START_Y, selectWidth, selectHeight).data
+      for (let j = 0; j < selectWidth; j += step) {
+        for (let i = 0; i < selectHeight; i += step) {
+          if (imgData[(i * selectWidth + j) * 4] > 0) {
             posArr.push({
-              x: j,
-              y: i
+              x: START_X + j,
+              y: START_Y + i
             })
           }
         }
       }
       ctx.clearRect(0, 0, W, H)
       return posArr
-    }
-
-    function init() {
-      const posArr = getTextPosArr()
-      let i = 0
-      do {
-        const pos = posArr[i++] ?? Particle.getOffScreenPos()
-        particles.push(new Particle(pos.x, pos.y))
-      } while (i < particleNum)
-      ctx.globalCompositeOperation = 'lighten'
     }
 
     function render() {
@@ -197,8 +199,89 @@
       requestAnimationFrame(render)
     }
 
+    function init() {
+      ctx.fillText('88:88:88', W / 2, H / 2)
+      const imgData = ctx.getImageData(0, 0, W, H)
+      //利用线程扫描绘制区域的开始结束x/y轴位置，后续取像素数据和遍历数据根据这些位置，能够有效减少去像素数据和遍历的时间
+      Promise.all([
+        new Promise(resolve => {
+          const worker = new Worker('js/clock-worker.js')
+          worker.postMessage({
+            imgData,
+            W,
+            H,
+            step,
+            type: 'startX'
+          })
+          worker.onmessage = ({data}) => {
+            START_X = data
+            worker.terminate()
+            resolve(data)
+          }
+        }),
+        new Promise(resolve => {
+          const worker = new Worker('js/clock-worker.js')
+          worker.postMessage({
+            imgData,
+            W,
+            H,
+            step,
+            type: 'endX'
+          })
+          worker.onmessage = ({data}) => {
+            END_X = data
+            worker.terminate()
+            resolve(data)
+          }
+        }),
+        new Promise(resolve => {
+          const worker = new Worker('js/clock-worker.js')
+          worker.postMessage({
+            imgData,
+            W,
+            H,
+            step,
+            type: 'startY'
+          })
+          worker.onmessage = ({data}) => {
+            START_Y = data
+            worker.terminate()
+            resolve(data)
+          }
+        }),
+        new Promise(resolve => {
+          const worker = new Worker('js/clock-worker.js')
+          worker.postMessage({
+            imgData,
+            W,
+            H,
+            step,
+            type: 'endY'
+          })
+          worker.onmessage = ({data}) => {
+            END_Y = data
+            worker.terminate()
+            resolve(data)
+          }
+        }),
+      ]).then(() => {
+        selectWidth = END_X - START_X
+        selectHeight = END_Y - START_Y
+
+        const posArr = getTextPosArr()
+        let i = 0
+        do {
+          const pos = posArr[i++] ?? Particle.getOffScreenPos()
+          particles.push(new Particle(pos.x, pos.y))
+        } while (i < particleNum)
+        ctx.globalCompositeOperation = 'lighten'
+
+        render()
+      })
+      ctx.clearRect(0, 0, W, H)
+    }
+
     init()
-    render()
 
   })()
 </script>
