@@ -92,12 +92,11 @@ class Hammer extends Shape {
    * @param level 层级
    * @param borderNum 边数
    */
-  constructor(x, y, width, height, level = 1, radian = 0, borderNum = randomInt(3, 12)) {
+  constructor(x, y, width, height, level = 1, radian = 0, borderNum = randomInt(3, 10)) {
     super(x, y)
     this.width = width
     this.height = height
     this.radian = radian
-    this.borderNum = borderNum
     const headerRadius = randomFloat(0.1 * width, 0.25 * width)
 
     const cube = new Cube(x, y, width + 10 - headerRadius, height)
@@ -179,7 +178,7 @@ class Snowflake extends Polygon {
   setRandomParams() {
     const {radius} = this,
       amplitude = this.amplitude = radius * randomFloat(0.1, 0.25),// 振幅
-      cycle = this.cycle = 1 / radius / randomFloat(0.15, 0.8)// 周期
+      cycle = this.cycle = 1 / radius / randomFloat(0.5, 2)// 周期
     this.speed = Math.random() * Math.random() * Math.random() * radius * amplitude * cycle
     this.yOffset = randomFloat(0.5, 3)
     this.rotateRadianOffset = randomFloat(-Math.PI / 180, Math.PI / 180) * radius * 0.1
@@ -245,13 +244,11 @@ function render() {
   let j = length - 1
   outCtx.clearRect(0, 0, w, h)
   snowflakes.sort((s1, s2) => s1.radius - s2.radius)
-  console.time('while')
   do {
     const snowflake = snowflakes[j--]
     snowflake.inScreen(w, h) && snowflake.draw(path)
     snowflake.falling(w, h)
   } while (j >= 0)
-  console.timeEnd('while')
   outCtx.fill(path)
   if (i++ % 10 === 0 && length < 140) {
     snowflakes.push(new Snowflake(randomInt(0, w), 0, randomInt(3, 30), randomInt(6, 12)))
