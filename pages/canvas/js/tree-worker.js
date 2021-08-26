@@ -1,0 +1,221 @@
+/*
+  知识点一：
+    2π是一个圆的弧度
+    2*π*rad=360°  rad是弧度
+    1°=π*rad/180
+    1rad=180°/π
+
+  思想：树由若干分支组成，分支之下还有分支，直到最后一级的分支（有点类似递归，所以最后一个分支的没有分支）
+    分支：确定好某一个方向，然后沿着该方向某一角度方向移动，子分子基于父分支角度移动，每个分支颜色一致
+    叶子：叶子由随机大小的圆和它的阴影组成，位置是末分支最后移动的位置
+    何时完成？
+      末分支：叶子生长完成
+      非末分支：子分子生长完成
+*/
+
+/*
+  洗牌算法：按顺序将数组中的每个元素与数组中任一元素交换位置，模拟手动洗牌的过程
+  https://www.zhihu.com/question/68330851/answer/266506621
+*/
+Array.prototype.shuffle = function () {
+  const arr = this
+  for (let i = 0; i < arr.length; i++) {
+    const n = randomInt(0, arr.length - 1),
+      tem = arr[n]
+    arr[n] = arr[i]
+    arr[i] = tem
+  }
+  return arr
+}
+
+function randomFloat(min, max) {
+  return Math.random() * (max - min) + min
+}
+
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+//生成亮色
+function generateColor() {
+  const n1 = randomInt(150, 250),
+    n2 = randomInt(100, 250),
+    n3 = randomInt(0, 50),
+    colorArr = [n1, n2, n3]
+  colorArr.shuffle()
+  return `rgba(${colorArr[0]},${colorArr[1]},${colorArr[2]},0.4)`
+}
+
+
+class Tree {
+  #branchs = []
+
+  constructor(x, y, radius, level, branchNum = randomInt(2, 3)) {
+    this.x = x
+    this.y = y
+
+    for (let i = 0; i < branchNum; i++) {
+      this.#branchs.push(new Branch(x, y, radius, level, generateColor()))
+    }
+  }
+
+  grow(ctx) {
+    for (const branch of this.#branchs) {
+      if (branch.allFinish()) {
+        continue
+      }
+      branch.grow(ctx)
+    }
+  }
+
+  allFinish() {
+    let finish = true
+    for (const branch of this.#branchs) {
+      finish = finish && branch.allFinish()
+    }
+    return finish
+  }
+}
+
+class Branch {
+  #angleOffset = 0
+  #step = 2
+  #branchs = []
+  #color = ''
+  #x = 0
+  #y = 0
+  #angle = 90
+  #lifespan = randomInt(80, 130)
+  #age = 0
+  #level = 0
+  #branchNum = 0
+
+  constructor(x, y, radius, level, color = generateColor(), angle = 90, branchNum = randomInt(2, 4)) {
+    this.#x = x
+    this.#y = y
+    this.radius = radius
+    this.#color = color
+    this.finished = false
+    this.#level = level
+    this.#branchNum = branchNum
+    this.#angle = angle
+    this.#angleOffset = 10 - this.#level * 1.5
+  }
+
+  grow(ctx) {
+    if (this.allFinish()) return
+    if (this.finished) {
+      if (this.#level === 0) {
+        const {leaf} = this
+        if (!leaf.finished) leaf.grow(ctx)
+      } else {
+        for (const branch of this.#branchs) {
+          !branch.allFinish() && branch.grow(ctx)
+        }
+      }
+    } else {
+      const pos = Branch.getCoordinate(this.#x, this.#y, this.#angle, this.#step)
+      ctx.fillStyle = this.#color
+      ctx.beginPath()
+      ctx.arc(pos.x, pos.y, this.radius, 0, 2 * Math.PI)
+      ctx.closePath()
+      ctx.fill()
+      if (++this.#age < this.#lifespan) {
+        this.radius -= this.radius > 1.5 ? 0.05 : 0
+        this.#angle += randomFloat(-this.#angleOffset, this.#angleOffset)
+        this.#step -= 0.0025
+        this.#x = pos.x
+        this.#y = pos.y
+      } else {
+        if (this.#level > 0) {
+          for (let i = 0; i < this.#branchNum; i++) {
+            this.#branchs.push(new Branch(this.#x, this.#y, this.radius, this.#level - 1, this.#color, this.#angle))
+          }
+        } else {
+          this.leaf = new Leaf(Math.floor(this.#x), Math.floor(this.#y))
+        }
+        this.finished = true
+      }
+    }
+  }
+
+  static getCoordinate(x, y, angle, step) {
+    const radian = angle * (Math.PI / 180)
+    return {
+      x: x - step * Math.cos(radian),
+      y: y - step * Math.sin(radian),
+    }
+  }
+
+  allFinish() {
+    if (this.#level === 0) {
+      return this?.leaf?.finished ?? false
+    } else if (this.finished) {
+      let finish = true
+      for (const branch of this.#branchs) {
+        finish = finish && branch.allFinish()
+      }
+      return finish
+    }
+    return false
+  }
+}
+
+class Leaf {
+  #size = randomInt(4, 8)
+  #radius = 0
+  #x = 0
+  #y = 0
+  #color = generateColor()
+
+  constructor(x, y) {
+    this.#x = x
+    this.#y = y
+    this.finished = false
+  }
+
+  grow(ctx) {
+    if (this.#radius > this.#size) {
+      this.finished = true
+      return
+    }
+    ctx.beginPath()
+    ctx.arc(this.#x, this.#y, this.#radius, 0, 2 * Math.PI)
+    ctx.fillStyle = this.#color
+    ctx.fill()
+    ctx.shadowBlur = this.#size * 40
+    ctx.shadowColor = this.#color
+    this.#radius += randomFloat(0.3, 0.8)
+  }
+}
+
+let canvas,
+  W,
+  H
+const tree = new Tree(0, 0, 20, 4)
+
+function render() {
+  tree.grow(ctx)
+  if (!tree.allFinish()) {
+    const imageBitmap=canvas.transferToImageBitmap()
+    postMessage(imageBitmap,[imageBitmap])
+    requestAnimationFrame(render)
+  }
+}
+
+addEventListener('message', ({data: {clientWidth, clientHeight}}) => {
+  W = clientWidth
+  H = clientHeight
+  if (canvas) {
+    canvas.width = W
+    canvas.height = H
+  } else {
+    canvas = new OffscreenCanvas(W, H);
+    ctx = canvas.getContext('2d')
+    ctx.globalAlpha = 0.5
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.translate(W / 2, H)
+  }
+
+  render()
+})

@@ -16,92 +16,93 @@
 <script>
   //https://www.html.cn/web/html/12344.html
 
-  class BallWave {
-    #fillLinearGradient = null
-    #ctx = null
-    #canvas = null
-    #xOffset = 0
-    #yOffset = 0
-    #colorMap = null
-
-    constructor(percentage, colors, canvas) {
-      this.percentage = percentage
-      this.#canvas = canvas
-      this.#colorMap = colors
-      const ctx = this.#ctx = canvas.getContext('2d')
-      const fillLinearGradient = this.#fillLinearGradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
-
-      for (const pos of colors.keys()) {
-        fillLinearGradient.addColorStop(pos, colors.get(pos))
-      }
-
-      ctx.arc(canvas.width / 2, canvas.height / 2, canvas.height / 2, 0, 2 * Math.PI)
-      ctx.clip()
-      this.#yOffset = canvas.height
-    }
-
-    draw() {
-      const ctx = this.#ctx
-      const canvas = this.#canvas
-      const xOffset = this.#xOffset
-      const yOffset = this.#yOffset
-      const maxWidth = canvas.width
-      const maxHeight = canvas.height * (1 - this.percentage)
-
-      ctx.clearRect(0, 0, maxWidth, canvas.height)
-
-      //大幅度水波覆盖小幅度水波
-      this.#drawWaterWave(5, 0.02, xOffset, yOffset, this.#colorMap.get(1))
-      this.#drawWaterWave(5, 0.05, xOffset, yOffset, this.#fillLinearGradient)
-
-      this.#yOffset = yOffset <= maxHeight ? maxHeight : yOffset - 0.5
-      this.#xOffset = xOffset > maxWidth ? 0 : xOffset + 0.03
-    }
-
-    /**
-     * - 参考文档：https://www.html.cn/web/html/12344.html
-     * - 绘制水波，
-     * - 利用公式：y = A sin(Bx + C) + D；
-     *   >- A：振幅。值越大曲线越陡峭
-     *   >- B：周期。值大于一时，值越大，周期越短；值为0-1周期变长，值越小周期越长
-     *   >- C：水平偏移量。正值向左，负值向右
-     *   >- D：垂直偏移量
-     * @param amplitude 振幅
-     * @param cycle 周期
-     * @param xOffset 水平偏移量
-     * @param yOffset 垂直偏移量
-     * @param color 填充颜色
-     */
-    #drawWaterWave(amplitude = 10, cycle = 0.07, xOffset, yOffset, color = this.#fillLinearGradient) {
-      const canvas = this.#canvas
-      const ctx = this.#ctx
-      ctx.moveTo(0, 0)
-      ctx.beginPath()
-      for (let i = 0; i < canvas.width; i++) {
-        ctx.lineTo(i, Math.sin(i * cycle + xOffset) * amplitude + yOffset)
-      }
-      ctx.lineTo(canvas.width, canvas.height)
-      ctx.lineTo(0, canvas.height)
-      ctx.closePath()
-      ctx.fillStyle = color
-      ctx.fill()
-    }
-  }
-
   (function () {
-    const canvas = document.querySelector('canvas')
-    const percentageInput = document.getElementById('percentageInput')
-    const percentage = document.getElementById('percentage')
-    if (!canvas?.getContext ?? true) return
-    const ball = new BallWave(
-      percentageInput.value / 100,
-      new Map([
-        [0, '#07616a'],
-        [0.5, '#22aebb'],
-        [1, '#a2d9e2'],
-      ]),
-      canvas
-    )
+    class BallWave {
+      #fillLinearGradient = null
+      #ctx = null
+      #canvas = null
+      #xOffset = 0
+      #yOffset = 0
+      #colorMap = null
+
+      constructor(percentage, colors, canvas) {
+        this.percentage = percentage
+        this.#canvas = canvas
+        this.#colorMap = colors
+        const ctx = this.#ctx = canvas.getContext('2d'),
+          {width, height} = canvas,
+          fillLinearGradient = this.#fillLinearGradient = ctx.createLinearGradient(0, 0, 0, height)
+
+        for (const color of colors) {
+          fillLinearGradient.addColorStop(color[0], color[1])
+        }
+
+        ctx.arc(width / 2, height / 2, height / 2, 0, 2 * Math.PI)
+        ctx.clip()
+        this.#yOffset = height
+      }
+
+      draw() {
+        const ctx = this.#ctx,
+          canvas = this.#canvas,
+          {width, height} = canvas,
+          xOffset = this.#xOffset,
+          yOffset = this.#yOffset,
+          maxHeight = height * (1 - this.percentage)
+
+        ctx.clearRect(0, 0, width, height)
+
+        //大幅度水波覆盖小幅度水波
+        this.#drawWaterWave(5, 0.02, xOffset, yOffset, this.#colorMap.get(1))
+        this.#drawWaterWave(5, 0.05, xOffset, yOffset, this.#fillLinearGradient)
+
+        this.#yOffset = yOffset <= maxHeight ? maxHeight : yOffset - 0.5
+        this.#xOffset = xOffset > width ? 0 : xOffset + 0.03
+      }
+
+      /**
+       * - 参考文档：https://www.html.cn/web/html/12344.html
+       * - 绘制水波，
+       * - 利用公式：y = A sin(Bx + C) + D；
+       *   >- A：振幅。值越大曲线越陡峭
+       *   >- B：周期。值大于一时，值越大，周期越短；值为0-1周期变长，值越小周期越长
+       *   >- C：水平偏移量。正值向左，负值向右
+       *   >- D：垂直偏移量
+       * @param amplitude 振幅
+       * @param cycle 周期
+       * @param xOffset 水平偏移量
+       * @param yOffset 垂直偏移量
+       * @param color 填充颜色
+       */
+      #drawWaterWave(amplitude = 10, cycle = 0.07, xOffset, yOffset, color = this.#fillLinearGradient) {
+        const canvas = this.#canvas,
+          {width, height} = canvas,
+          ctx = this.#ctx
+        ctx.moveTo(0, 0)
+        ctx.beginPath()
+        for (let i = 0; i < width; i++) {
+          ctx.lineTo(i, Math.sin(i * cycle + xOffset) * amplitude + yOffset)
+        }
+        ctx.lineTo(width, height)
+        ctx.lineTo(0, height)
+        ctx.closePath()
+        ctx.fillStyle = color
+        ctx.fill()
+      }
+    }
+
+    const canvas = document.querySelector('canvas'),
+      percentageInput = document.getElementById('percentageInput'),
+      percentage = document.getElementById('percentage'),
+      ball = new BallWave(
+        percentageInput.value / 100,
+        new Map([
+          [0, '#07616a'],
+          [0.5, '#22aebb'],
+          [1, '#a2d9e2'],
+        ]),
+        canvas
+      )
 
     percentageInput.addEventListener('change', function () {
       ball.percentage = this.value / 100
