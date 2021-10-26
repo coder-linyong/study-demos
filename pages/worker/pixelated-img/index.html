@@ -53,25 +53,23 @@
 <button id="create-btn">生成</button>
 </body>
 <script type="module">
-  function $(query) {
-    return document.querySelector(query)
-  }
-
-  function $$(query) {
-    return document.querySelectorAll(query)
-  }
-
-  // alert('拖拽图片到左边虚线框内')
 
   (function () {
-    const imgContainer = $('#img-container')
-    const pixelImg = $('#pixel-img')
-    const createBtn = $('#create-btn')
-    const sizeInput = $('#block-size')
-    const img = $('#img-container>img')
-    const worker = new Worker('./js/worker.js')
-    let canvas
-    let ctx
+    function $(query) {
+      return document.querySelector(query)
+    }
+
+    function $$(query) {
+      return document.querySelectorAll(query)
+    }
+
+    const imgContainer = $('#img-container'),
+      pixelImg = $('#pixel-img'),
+      createBtn = $('#create-btn'),
+      sizeInput = $('#block-size'),
+      img = $('#img-container>img'),
+      worker = new Worker('./js/worker.js')
+    let canvas, ctx
 
     function dragHandler(e) {
       const {
@@ -122,7 +120,7 @@
       createBtn.disable = true
     })
 
-    worker.addEventListener('message', ({ data }) => {
+    worker.addEventListener('message', ({data}) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.putImageData(data, 0, 0)
       pixelImg.innerHTML = ''

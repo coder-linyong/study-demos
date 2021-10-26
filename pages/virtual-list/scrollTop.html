@@ -78,43 +78,41 @@
   *   2.数据容器设置为绝对定位，根据当前可是区域内的数据设置容器的translateY
   * */
   (function () {
-    const data = []
+    const documentFragment = document.createDocumentFragment(),
+      list = document.querySelector('#list'),
+      container = document.querySelector('#container'),
+      phantom = document.querySelector('#phantom'),
+      itemHeight = 70,
+      data = [],
+      init = () => {
+        phantom.style = `height:${itemHeight * data.length}px;`
+        visibleNum = Math.ceil(container.clientHeight / itemHeight)
+        endIndex = visibleNum - 1
+        render()
+      },
+      render = () => {
+        list.innerHTML = ''
+        list.style.setProperty('transform', `translateY(${startIndex * itemHeight}px)`)
+        //将元素添加到文档片段然后一次性添加到DOM树中要比逐次添加到DOM树中性能要高
+        for (let i = startIndex; i <= endIndex; i++) {
+          const div = document.createElement('div')
+          div.classList.add('item')
+          div.dataset.index = i
+          div.innerText = data[i].name
+          documentFragment.appendChild(div)
+        }
+        list.append(documentFragment)
+      }
+    let startIndex = 0,
+      endIndex = 0,
+      visibleNum = 0,
+      scrollTop = 0
+
     for (let i = 0; i < 1000000; i++) {
       data.push({
         id: i,
         name: `第 ${i} 条`
       })
-    }
-    const documentFragment = document.createDocumentFragment()
-    const list = document.querySelector('#list')
-    const container = document.querySelector('#container')
-    const phantom = document.querySelector('#phantom')
-    const itemHeight = 70
-    let startIndex = 0
-    let endIndex = 0
-    let visibleNum = 0
-    let scrollTop = 0
-    //初始化
-    const init = () => {
-      //初始化
-      phantom.style = `height:${itemHeight * data.length}px;`
-      visibleNum = Math.ceil(container.clientHeight / itemHeight)
-      endIndex = visibleNum - 1
-      render()
-    }
-    //渲染
-    const render = () => {
-      list.innerHTML = ''
-      list.style.setProperty('transform', `translateY(${startIndex * itemHeight}px)`)
-      //将元素添加到文档片段然后一次性添加到DOM树中要比逐次添加到DOM树中性能要高
-      for (let i = startIndex; i <= endIndex; i++) {
-        const div = document.createElement('div')
-        div.classList.add('item')
-        div.dataset.index = i
-        div.innerText = data[i].namesw
-        documentFragment.appendChild(div)
-      }
-      list.append(documentFragment)
     }
 
     container.addEventListener('scroll', () => {
@@ -132,6 +130,6 @@
     })
 
     init()
-  })(arr)
+  })()
 </script>
 </html>

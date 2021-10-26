@@ -44,84 +44,83 @@
         最小可视半径不为1，要远远大于这个数
   */
 
-  function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min)
-  }
-
-  class Drop {
-    constructor(radius, x, y) {
-      const {
-        clientHeight,
-        clientWidth
-      } = document.body
-      this.startX = this.x = x || clientWidth / 2
-      this.startY = this.y = y || clientHeight / 2
-      this.radius = radius
+  (function () {
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1) + min)
     }
 
-    get finished() {
-      const {
-        startX,
-        startY,
-        x,
-        y,
-        radius
-      } = this
-      return startX > x - radius && startX < x + radius && startY > y - radius && startY < y + radius
-    }
+    class Drop {
+      constructor(radius, x, y) {
+        const {
+          clientHeight,
+          clientWidth
+        } = document.body
+        this.startX = this.x = x || clientWidth / 2
+        this.startY = this.y = y || clientHeight / 2
+        this.radius = radius
+      }
 
-    //通过Path2D将圆添加到画布上
-    draw(path) {
-      const {
-        startX,
-        startY,
-        radius
-      } = this
-      path.arc(startX, startY, radius, 0, Math.PI * 2)
-      path.closePath()
-    }
+      get finished() {
+        const {
+          startX,
+          startY,
+          x,
+          y,
+          radius
+        } = this
+        return startX > x - radius && startX < x + radius && startY > y - radius && startY < y + radius
+      }
 
-    // 水滴偏移越远移动越缓慢
-    move() {
-      const {
-        startX,
-        startY,
-        x,
-        y,
-        finished
-      } = this
-      if (!finished) {
-        const xStep = (startX - x) / 200
-        const yStep = (startY - y) / 200
-        this.startX -= xStep
-        this.startY -= yStep
+      //通过Path2D将圆添加到画布上
+      draw(path) {
+        const {
+          startX,
+          startY,
+          radius
+        } = this
+        path.arc(startX, startY, radius, 0, Math.PI * 2)
+        path.closePath()
+      }
+
+      // 水滴偏移越远移动越缓慢
+      move() {
+        const {
+          startX,
+          startY,
+          x,
+          y,
+          finished
+        } = this
+        if (!finished) {
+          const xStep = (startX - x) / 200
+          const yStep = (startY - y) / 200
+          this.startX -= xStep
+          this.startY -= yStep
+        }
+      }
+
+      /**
+       * 判断某点是否在另一点的半径范围内
+       * @param x1 点1的x轴坐标
+       * @param y1 点1的y轴坐标
+       * @param x2 点2的x轴坐标
+       * @param y2 点2的y轴坐标
+       * @param radius 半径
+       * @returns {boolean} 返回是否在半径范围内
+       */
+      static isInCircle(x1, y1, x2, y2, radius) {
+        const xStep = x1 - x2
+        const yStep = y1 - y2
+        return radius > Math.sqrt(xStep * xStep + yStep * yStep)
       }
     }
 
-    /**
-     * 判断某点是否在另一点的半径范围内
-     * @param x1 点1的x轴坐标
-     * @param y1 点1的y轴坐标
-     * @param x2 点2的x轴坐标
-     * @param y2 点2的y轴坐标
-     * @param radius 半径
-     * @returns {boolean} 返回是否在半径范围内
-     */
-    static isInCircle(x1, y1, x2, y2, radius) {
-      const xStep = x1 - x2
-      const yStep = y1 - y2
-      return radius > Math.sqrt(xStep * xStep + yStep * yStep)
-    }
-  }
-
-  (function () {
-    const canvas = document.querySelector('canvas')
-    if (!canvas?.getContext ?? true) return
-    const ctx = canvas.getContext('2d')
-    const W = canvas.width = document.body.clientWidth
-    const H = canvas.height = document.body.clientHeight
-    const drops = []//所有水滴
-    const fused = []//需要融合的水滴
+    const canvas = document.querySelector('canvas'),
+      ctx = canvas.getContext('2d'),
+      W = canvas.width = document.body.clientWidth,
+      H = canvas.height = document.body.clientHeight,
+      drops = [],//所有水滴
+      fused = []//需要融合的水滴
     let chosenDrop = null
 
     for (let i = 0; i < 200; i++) {
@@ -143,23 +142,27 @@
     })
     canvas.addEventListener('mousemove', e => {
       if (chosenDrop) {
-        chosenDrop.startX = chosenDrop.x = e.clientX
-        chosenDrop.startY = chosenDrop.y = e.clientY
+        const X = chosenDrop.startX = chosenDrop.x = e.clientX,
+          Y = chosenDrop.startY = chosenDrop.y = e.clientY,
+          chosenDropRadius = chosenDrop.radius
         for (const drop of drops) {
           if (drop === chosenDrop) continue
-          const includes = fused.includes(drop)
-          const inPath = Drop.isInCircle(chosenDrop.x, chosenDrop.y, drop.x, drop.y, chosenDrop.radius * 1.5)
+          const includes = fused.includes(drop),
+            {x, y} = drop,
+            dropRadius = drop.radius,
+            inPath = Drop.isInCircle(X, Y, x, y, chosenDropRadius * 1.5)
           // 在选中水滴1.5倍半径内，且不包含在融合数组中，且比选中的水滴要小（如果比选中的大或者一样大这不融合）
-          if (!includes && inPath && drop.radius < chosenDrop.radius) {
-            drop.x = chosenDrop.x
-            drop.y = chosenDrop.y
+          if (!includes && inPath && dropRadius < chosenDropRadius) {
+            drop.x = X
+            drop.y = Y
             fused.push(drop)
-          } else if (drop.radius > 21 && Drop.isInCircle(chosenDrop.x, chosenDrop.y, drop.x, drop.y, chosenDrop.radius)) {
+          } else if (drop.radius > 21 && Drop.isInCircle(X, Y, drop.x, drop.y, chosenDropRadius)) {
             // 在选中水滴1.5倍半径内，且半径大于可视大小，相互融合
-            const dropArea = (drop.radius ** 2) * Math.PI
-            drop.radius - 1 > 21 ? drop.radius -= 1 : {}
+            const dropArea = (dropRadius ** 2) * Math.PI
+            drop.radius > 22 && (drop.radius -= 1)
+            //这个地方必须用drop.radius，因为上面变化了
             const decreasingArea = dropArea - (drop.radius ** 2) * Math.PI
-            chosenDrop.radius = Math.sqrt(((chosenDrop.radius ** 2) * Math.PI + decreasingArea) / Math.PI)
+            chosenDrop.radius = Math.sqrt(((chosenDropRadius ** 2) * Math.PI + decreasingArea) / Math.PI)
           }
         }
         //将要融合的水滴位置实时跟新为选中水滴的中心点。

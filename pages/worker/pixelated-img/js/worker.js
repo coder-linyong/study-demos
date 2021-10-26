@@ -19,11 +19,11 @@ addEventListener('message', (
 ) => {
   for (let x = 0; x < width; x += size) {
     for (let y = 0; y < height; y += size) {
-      const offset = (y * width + x) * 4
-      const r = data[offset]
-      const g = data[offset + 1]
-      const b = data[offset + 2]
-      const a = data[offset + 3]
+      const offset = (y * width + x) * 4,
+        r = data[offset],
+        g = data[offset + 1],
+        b = data[offset + 2],
+        a = data[offset + 3]
 
       for (let i = 0; i < size && x + i < width; i++) {
         for (let j = 0; j < size && y + j < height; j++) {

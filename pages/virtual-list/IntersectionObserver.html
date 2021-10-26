@@ -76,21 +76,15 @@
   * */
 
   (function () {
-    const data = []
-    for (let i = 0; i < 1000000; i++) {
-      data.push({
-        id: i,
-        name: `第 ${i} 条`
-      })
-    }
-    const documentFragment = document.createDocumentFragment()
-    const list = document.querySelector('#list')
-    const container = document.querySelector('#container')
-    const phantom = document.querySelector('#phantom')
-    const itemHeight = 70
-    let startIndex = 0
-    let endIndex = 0
-    let visibleNum = 0
+    const data = [],
+      documentFragment = document.createDocumentFragment(),
+      list = document.querySelector('#list'),
+      container = document.querySelector('#container'),
+      phantom = document.querySelector('#phantom'),
+      itemHeight = 70
+    let startIndex = 0,
+      endIndex = 0,
+      visibleNum = 0
     const intersectionObserver = new IntersectionObserver(function (entries, observer) {
       //当是两个入口，且入口都与列表容器相交（即都在可视区域内），则是初始渲染或者计算后的结果
       if (entries.length === 2 && entries[0].isIntersecting && entries[1].isIntersecting) return
@@ -103,7 +97,6 @@
     }, {
       root: container
     })
-    //初始化
     const init = () => {
       //列表总高度，主要作用是滚动条效果
       phantom.style = `height:${itemHeight * data.length}px;`
@@ -112,7 +105,6 @@
       endIndex = visibleNum - 1
       render()
     }
-    //渲染
     const render = () => {
       //将元素添加到文档片段然后一次性添加到DOM树中要比逐次添加到DOM树中性能要高
       for (let i = startIndex; i <= endIndex; i++) {
@@ -126,6 +118,13 @@
       //监视首尾元素
       intersectionObserver.observe(list.firstElementChild)
       intersectionObserver.observe(list.lastElementChild)
+    }
+
+    for (let i = 0; i < 1000000; i++) {
+      data.push({
+        id: i,
+        name: `第 ${i} 条`
+      })
     }
 
     init()

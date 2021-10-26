@@ -20,7 +20,7 @@ export default class Db {
   }
 
   open() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const dbRequest = indexedDB.open(this.dbName, this.version)
 
       dbRequest.onupgradeneeded = ev => {
