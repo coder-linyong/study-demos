@@ -17,11 +17,11 @@ export function curry(func, len = func.length, args = []) {
 }
 
 /**
- * 性能更好写法更优美的柯里化函数
+ * 更优美的柯里化函数
  * @param fn 需要柯里化的函数
  * @return {any} 柯里化后的函数
  */
-export const curry3 = fn => {
+export const curry = fn => {
   const judge = (...args) =>
     args.length === fn.length
       ? fn(...args)

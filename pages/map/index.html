@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>求某个点与正Y轴的便宜角度</title>
+</head>
+<body>
+
+</body>
+<script>
+  //WGS-84转xy坐标系
+  //https://cxyzjd.com/article/LuckyMon/107783136
+  //https://www.cxyzjd.com/article/u010384390/78532775
+  function lngLatToXY(lon, lat, H1 = 0) {
+    const a = 6378137
+    const f = 1 / 298.257223563
+    const b = a * (1 - f)
+    const e = Math.sqrt(a * a - b * b) / a
+    const N = a / Math.sqrt(1 - e * e * Math.sin(lat * Math.PI / 180) * Math.sin(lat * Math.PI / 180))
+    const X = (N + H1) * Math.cos(lat * Math.PI / 180) * Math.cos(lon * Math.PI / 180)
+    const Y = (N + H1) * Math.cos(lat * Math.PI / 180) * Math.sin(lon * Math.PI / 180)
+    return {X, Y}
+  }
+
+
+  const R = 6378137 // 赤道半径 6378137
+  const R1 = 6356752
+
+  function getXY(lon, lat) {
+    const x = R * lon * Math.cos(lat / 180 * Math.PI) / 180 * Math.PI
+    const y = R * lat / 180 * Math.PI
+    return {x, y}
+  }
+
+  const point1 = lngLatToXY(113.974244, 22.661896)
+  const point2 = lngLatToXY(114.037485, 22.615998)
+  console.log(point1)
+  console.log(point2)
+  const x = point2.X - point1.X
+  const y = point2.Y - point1.Y
+  const radius = Math.hypot(x, y)
+  const angle = Math.atan2(y, x) * Math.PI / 180
+  console.log(Math.acos(x / radius) * 180 / Math.PI)
+
+</script>
+</html>

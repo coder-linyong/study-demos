@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width">
+  <meta name="viewport" content="initial-scale=1,minimum-scale=1,minimal-ui">
+  <meta name="keywords" content="轮播"/>
+  <meta name="description" content="轮播案例"/>
+  <title>Title</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      --directionSize: 100px;
+      --directionHorizontal: 40px;
+      --positionZindex: 999;
+      --bg: #d0cece;
+    }
+
+    .container {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .container .mask {
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 48px;
+      z-index: 9;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      user-select: none;
+    }
+
+    .img-wrapper {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .img-wrapper .img-box {
+      position: absolute;
+      left: 0;
+      top: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      transition: all 0.2s;
+    }
+
+    .img-box img {
+      max-height: 100%;
+      max-width: 100%;
+    }
+
+    .direction {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: var(--directionSize);
+      height: var(--directionSize);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.49);
+      cursor: pointer;
+      z-index: var(--positionZindex);
+      --triangleSize: 30px;
+      --triangleBg: rgba(255, 255, 255, 100%);
+    }
+
+    .direction:active {
+      background: rgba(255, 255, 255, 0.65);
+    }
+
+    .direction::after {
+      content: '';
+      box-sizing: border-box;
+      border: var(--triangleSize) solid;
+      width: var(--triangleSize);
+      height: var(--triangleSize);
+    }
+
+    .direction.left {
+      left: var(--directionHorizontal);
+    }
+
+    .direction.left::after {
+      transform: translateX(-30%);
+      border-color: transparent var(--triangleBg) transparent transparent;
+    }
+
+    .direction.right {
+      right: var(--directionHorizontal);
+    }
+
+    .direction.right::after {
+      transform: translateX(30%);
+      border-color: transparent transparent transparent var(--triangleBg);
+    }
+
+    .progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      z-index: var(--positionZindex);
+    }
+
+    .progress .bar {
+      width: 0;
+      height: 100%;
+      background: #ffd81f;
+    }
+  </style>
+</head>
+<body>
+<div class="container" id="container">
+  <div class="img-wrapper" id="img-wrapper"></div>
+  <div class="mask">Loading...</div>
+  <div class="direction left" id="direction-left"></div>
+  <div class="direction right" id="direction-right"></div>
+  <div class="progress">
+    <div class="bar" id="progress-bar"></div>
+  </div>
+</div>
+</body>
+</html>
+<script>
+  class ReactiveRangeNumber {
+    #changeCallbacks
+    #value
+
+    constructor(value, max = 0, min = 0, callbacks = []) {
+      this.#changeCallbacks = callbacks
+      this.#value = value
+      this.max = max
+      this.min = min
+    }
+
+    addCallback(callback) {
+      this.#changeCallbacks.push(callback)
+    }
+
+    get value() {
+      return this.#value
+    }
+
+    set value(newVal) {
+      const oldVal = this.#value
+      const {max, min} = this
+      newVal = this.#value = newVal > max ? max : newVal < min ? min : newVal
+      this.#changeCallbacks.reduce((promise, fn) => {
+        return promise.then(() => fn(newVal, oldVal))
+      }, Promise.resolve())
+    }
+  }
+
+  (function () {
+    /*
+      基于Promise和防响应式数据的轮播图
+     */
+    const interval = 20000
+    let lastTime = 0
+    let order = 1
+    let previousFrameTime = 0
+    let isHover = false
+    const reactiveIndex = new ReactiveRangeNumber(0)
+    const imgSrcList = [
+      'images/411820.jpg',
+      'images/1191196.jpg',
+      'images/1193723.jpg',
+      'images/949049.png',
+      'images/1192711.png',
+    ]
+    const container = document.getElementById('container')
+    let {clientWidth} = container
+    const imgBoxList = []
+    const progress = document.getElementById('progress-bar')
+
+    const debounce = (fn, wait, ...debounceArgs) => {
+      let timer = 0
+      return function (...args) {
+        const context = this
+        if (timer) {
+          clearTimeout(timer)
+        }
+        timer = setTimeout(() => {
+          fn.apply(context, [...debounceArgs, ...args])
+          timer = 0
+        }, wait)
+      }
+    }
+
+    const renderImages = () => {
+      const wrapper = document.getElementById('img-wrapper')
+      const documentFragment = document.createDocumentFragment()
+      return Promise.all(imgSrcList.map((src, index) => new Promise(resolve => {
+        const imgBox = document.createElement('div')
+        const img = document.createElement('img')
+
+        imgBox.classList.add('img-box')
+        imgBoxList.push(imgBox)
+        imgBox.append(img)
+
+        img.alt = `轮播图${index}`
+        imgBox.style.setProperty('left', `${index * clientWidth}px`)
+        img.src = src
+        documentFragment.append(imgBox)
+        img.addEventListener('load', resolve)
+        img.addEventListener('error', resolve)
+      }))).then(() => {
+        reactiveIndex.max = imgBoxList.length - 1
+        wrapper.append(documentFragment)
+      })
+    }
+
+    const removeMask = () => container.removeChild(container.querySelector('.mask'))
+
+    const switchImg = (newVal) => {
+      imgBoxList.forEach((img, index) => {
+        img.style.setProperty('left', `${(index - newVal) * clientWidth}px`)
+      })
+      lastTime = Date.now()
+    }
+
+    const startAnimation = () => {
+      /*
+        鼠标没有悬停：
+          1.当前时间戳大于等于下次时间戳，轮播到下一张图，重置进度条
+          2.当前时间戳小于下次时间戳，更新进度条（已过去的事件/总时间）
+        鼠标悬停：
+          上次切换事件不停地+(这一帧时间戳-上一帧时间戳)
+       */
+      const now = Date.now()
+      !lastTime && (lastTime = now)
+      let width = ((now - lastTime) / interval) * clientWidth
+      if (!isHover) {
+        const nextTime = lastTime + interval
+        if (now >= nextTime) {
+          reactiveIndex.value += order
+          order = reactiveIndex.value === reactiveIndex.max ? -1 : 1
+        }
+      } else {
+        lastTime += previousFrameTime ? now - previousFrameTime : 0
+      }
+      progress.style.setProperty('width', `${width}px`)
+      previousFrameTime = now
+      requestAnimationFrame(startAnimation)
+    }
+
+    const init = () => {
+      const task = [renderImages, removeMask, startAnimation]
+      const leftBtn = document.getElementById('direction-left')
+      const rightBtn = document.getElementById('direction-right')
+
+      task.reduce((promise, fn) => promise.then(fn), Promise.resolve())
+      reactiveIndex.addCallback(switchImg)
+      leftBtn.addEventListener('click', debounce(() => reactiveIndex.value--, 100))
+      rightBtn.addEventListener('click', debounce(() => reactiveIndex.value++, 100))
+      container.addEventListener('mouseover', () => isHover = true)
+      container.addEventListener('mouseout', () => isHover = false)
+      window.addEventListener('resize', debounce(() => {
+        clientWidth = container.clientWidth
+        switchImg(reactiveIndex.value)
+      }, 10))
+    }
+
+    window.addEventListener('load', init)
+  })()
+</script>
