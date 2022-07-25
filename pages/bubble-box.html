@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title></title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .ripple {
+      position: absolute;
+      top: 500px;
+      left: 500px;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+    }
+
+    .ripple::before, .ripple::after {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      content: '';
+      border-radius: 50%;
+      border: 2px solid #3470FF;
+      box-sizing: content-box;
+    }
+
+    .ripple::before {
+      animation: ripple 2.1s infinite ease-out;
+    }
+
+    @keyframes ripple {
+      0% {
+        width: 50px;
+        height: 50px;
+        opacity: 0;
+        border: 2px solid #3470FF;
+      }
+      30% {
+        width: 50px;
+        height: 50px;
+        opacity: 1;
+        border: 2px solid #3470FF;
+      }
+      52% {
+        width: 90px;
+        height: 90px;
+        opacity: 0.2;
+        border: 4px solid #3470FF;
+      }
+      62% {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        opacity: 0.5;
+        border: 3px solid #3470FF;
+      }
+      100% {
+        width: 24px;
+        height: 24px;
+        opacity: 0;
+        border: 2px solid #3470FF;
+      }
+    }
+
+    .inner {
+      padding: 100px 10px;
+    }
+
+    button {
+      position: absolute;
+      width: 100px;
+      height: 50px;
+      left: 500px;
+      top: 500px;
+    }
+
+    .square {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      transform: translate(-50%, -50%) rotate(45deg);
+      background: #3470FF;
+    }
+
+    .panel {
+      position: absolute;
+      width: 305px;
+      height: 344px;
+      background: #3470FF;
+      border-radius: 8px;
+      box-shadow: 0 0 0 1px #3470ff;
+    }
+
+  </style>
+</head>
+<body>
+<form>
+  <label>
+    气泡框位置
+    <select id="bubble-box-pos">
+      <option value="top">top</option>
+      <option value="right">right</option>
+      <option value="bottom">bottom</option>
+      <option value="left">left</option>
+    </select>
+  </label>
+  <label>
+    按钮x轴位置
+    <input type="number" id="btn-x" value="500">
+  </label>
+  <label>
+    按钮y轴位置
+    <input type="number" id="btn-y" value="500">
+  </label>
+</form>
+<div class="inner"></div>
+<button>按钮</button>
+<div class="ripple"></div>
+<div class="square"></div>
+<div class="panel"></div>
+</body>
+<script>
+  //气泡框例子，这个气泡框会根据目标位置调整自己到合适的位置
+  const dom = document.querySelector('button')
+  const ripple = document.querySelector('.ripple')
+  const square = document.querySelector('.square')
+  const panel = document.querySelector('.panel')
+  const bubbleBoxPos = document.getElementById('bubble-box-pos')
+  const btnX = document.getElementById('btn-x')
+  const btnY = document.getElementById('btn-y')
+
+  function onChange() {
+    const position = bubbleBoxPos.value
+    const x = btnX.value
+    const y = btnY.value
+    dom.style.left = `${x}px`
+    dom.style.top = `${y}px`
+    const domRect = dom.getBoundingClientRect()
+    //  箭头
+    const showRipple = true
+    const boundaryGap = 20
+    const {clientWidth: bodyWidth, clientHeight: bodyHeight} = document.body
+    const gap = 10 + Math.sqrt(square.clientWidth ** 2 + square.clientHeight ** 2) / 2 //10+方块斜边长度的一半
+    const rippleRadius = 45
+    const squareStrategy = {
+      left(domRect) {
+        const {left, width, top, height} = domRect
+        const x = showRipple ? Math.min(left - gap, left + width / 2 - rippleRadius - gap) : left - gap
+        const x2 = x - panel.clientWidth
+        const y = top + height / 2
+        const y2 = y > bodyHeight / 2 ? Math.min(y - panel.clientHeight / 2, bodyHeight - panel.clientHeight - boundaryGap) : Math.max(y - panel.clientHeight / 2, boundaryGap)
+        return [x, y, x2, y2]
+      },
+      right(domRect) {
+        const {right, width, top, height} = domRect
+        const x = showRipple ? Math.max(right + gap, right - width / 2 + rippleRadius + gap) : right + gap
+        const y = top + height / 2
+        const y2 = y > bodyHeight / 2 ? Math.min(y - panel.clientHeight / 2, bodyHeight - panel.clientHeight - boundaryGap) : Math.max(y - panel.clientHeight / 2, boundaryGap)
+        return [x, y, x, y2]
+      },
+      top(domRect) {
+        const {top, left, width, height} = domRect
+        const x = left + width / 2
+        const x2 = x < bodyWidth / 2 ? Math.max(x - panel.clientWidth / 2, boundaryGap) : Math.min(x - panel.clientWidth / 2, bodyWidth - panel.clientWidth - gap)
+        const y = showRipple ? Math.min(top - gap, top + height / 2 - rippleRadius - gap) : top - gap
+        const y2 = y - panel.clientHeight
+        return [x, y, x2, y2]
+      },
+      bottom(domRect) {
+        const {bottom, left, width, height} = domRect
+        const x = left + width / 2
+        const x2 = x < bodyWidth / 2 ? Math.max(x - panel.clientWidth / 2, boundaryGap) : Math.min(x - panel.clientWidth / 2, bodyWidth - panel.clientWidth - gap)
+        const y = showRipple ? Math.max(bottom + gap, bottom - height / 2 + rippleRadius + gap) : bottom + gap
+        return [x, y, x2, y]
+      }
+    }
+    const pos = squareStrategy[position](domRect)
+
+    ripple.style.left = `${domRect.left + domRect.width / 2}px`
+    ripple.style.top = `${domRect.top + domRect.height / 2}px`
+    square.style.left = `${pos[0]}px`
+    square.style.top = `${pos[1]}px`
+    panel.style.left = `${pos[2]}px`
+    panel.style.top = `${pos[3]}px`
+  }
+
+  onChange()
+
+  bubbleBoxPos.addEventListener('change', onChange)
+  btnX.addEventListener('change', onChange)
+  btnY.addEventListener('change', onChange)
+</script>
+</html>
