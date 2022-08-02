@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .box {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      width: 200px;
+      height: 200px;
+      background: aqua;
+      cursor: move;
+    }
+  </style>
+</head>
+<body>
+<div class="box"></div>
+</body>
+<script>
+
+  const box = document.querySelector('.box')
+  let checked = false
+  box.addEventListener('mousedown', (e) => {
+    checked = e.button === 0
+  })
+  box.addEventListener('mouseup', () => {
+    checked = false
+  })
+  box.addEventListener('mouseleave', () => {
+    checked = false
+  })
+
+  function move(domRect, box, e) {
+    const {width, height, left, top} = domRect
+    const {body: {clientWidth, clientHeight}} = document
+    const x = left + e.movementX
+    const y = top + e.movementY
+    box.style.left = `${left > clientWidth / 2 ? Math.min(x, clientWidth - width) : Math.max(0, x)}px`
+    box.style.top = `${top > clientHeight / 2 ? Math.min(y, clientHeight - height) : Math.max(0, y)}px`
+    return true
+  }
+
+  box.addEventListener('mousemove', e => {
+    if (!checked) return
+    const domRect = box.getBoundingClientRect()
+    move(domRect, box, e)
+  })
+</script>
+</html>
