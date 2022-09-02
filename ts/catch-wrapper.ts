@@ -22,6 +22,22 @@ const catchWrapper = <A extends Array<any>, R> (fun: (...args: A) => R, catchHan
   }
 }
 
+/**
+ * 函数的错误包裹器，如果发生错误，会在包裹器内部捕获；可指定捕获处理函数
+ * @param fun 需要捕获的函数
+ * @param catchHandler 捕获处理函数
+ */
+export function catchAsyncWrapper<A extends Array<any>, R> (fun: (...args: A) => Promise<R>, catchHandler?: (e: Error) => void, finallyHandler?: () => void) {
+  return function (...args: A): Promise<R> {
+    const promise = fun(...args)
+    promise
+      .catch(catchHandler || console.error)
+      .finally(finallyHandler)
+    return promise
+  }
+}
+
+
 export type AnyFunction = (...args: any[]) => any;
 
 /**
